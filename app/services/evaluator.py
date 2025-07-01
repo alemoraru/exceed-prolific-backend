@@ -15,6 +15,3 @@ def evaluate_code(code: str, snippet_id: str) -> tuple[str, str]:
         # Here you could run tests, e.g., pytest
         # For now assume success
         return "success", ""
-
-
-# backend/app/services/llm_intervention.py

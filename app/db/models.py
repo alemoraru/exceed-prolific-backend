@@ -1,13 +1,14 @@
-from sqlalchemy import Column, String, Integer, JSON
+from sqlalchemy import Column, String, Integer, Boolean, JSON
 from app.db.base import Base
 
 
 class Participant(Base):
     __tablename__ = "participants"
     id = Column(String, primary_key=True, index=True)
-    skill_level = Column(String, index=True)
-    python_yoe = Column(Integer)
-    answers = Column(JSON)
+    consent = Column(Boolean, nullable=False)
+    skill_level = Column(String, index=True, nullable=True)
+    python_yoe = Column(Integer, nullable=True)
+    answers = Column(JSON, nullable=True)
 
 
 class Submission(Base):
