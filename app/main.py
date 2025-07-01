@@ -1,6 +1,15 @@
 from fastapi import FastAPI
-
+from sqlalchemy import event
+from app.db.session import engine
 from app.api import participants, code_submission, intervention
+from app.db.base import Base
+
+
+# Automatically create tables at startup
+@event.listens_for(engine, "connect")
+def create_tables(dbapi_connection, connection_record):
+    Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(title="Error Message Study API")
 
