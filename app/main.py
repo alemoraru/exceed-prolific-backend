@@ -1,18 +1,38 @@
 from fastapi import FastAPI
-from sqlalchemy import event
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.db.session import engine
 from app.api import participants, code_submission, intervention
 from app.db.base import Base
-
-
-# Automatically create tables at startup
-@event.listens_for(engine, "connect")
-def create_tables(dbapi_connection, connection_record):
-    Base.metadata.create_all(bind=engine)
-
+import app.db.models as models
 
 app = FastAPI(title="Error Message Study API")
+
+
+@app.on_event("startup")
+def on_startup():
+    # Create tables once on startup
+    Base.metadata.create_all(bind=engine)
+
 
 app.include_router(participants.router, prefix="/api/participants", tags=["participants"])
 app.include_router(code_submission.router, prefix="/api/code", tags=["code_submission"])
 app.include_router(intervention.router, prefix="/api/intervention", tags=["intervention"])
+
+# Configure CORS
+origins = [
+    "http://localhost:3000",  # local development
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health", tags=["health", "infra", "monitoring", "status"])
+async def health_check():
+    return {"status": "ok", "message": "API is running smoothly"}

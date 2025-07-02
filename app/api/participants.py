@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import uuid
@@ -54,6 +54,8 @@ async def submit_experience(response: ExperienceResponse, db: Session = Depends(
     participant = db.query(models.Participant).get(response.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
+    if not participant.consent:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Consent is required to continue.")
     participant.python_yoe = response.python_yoe
     db.commit()
     return {"participant_id": response.participant_id}
@@ -64,9 +66,14 @@ async def submit_question(response: QuestionResponse, db: Session = Depends(get_
     participant = db.query(models.Participant).get(response.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
-    # Update answers JSON
-    answers = participant.answers or {}
-    answers[response.question_id] = response.answer
-    participant.answers = answers
+    if not participant.consent:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Consent is required to continue.")
+    # Prevent re-submission of the same question
+    existing_answers = participant.answers or {}
+    if response.question_id in existing_answers:
+        raise HTTPException(status_code=400, detail="Question already answered")
+    # Append new answer
+    updated = {**existing_answers, response.question_id: response.answer}
+    participant.answers = updated
     db.commit()
     return {"participant_id": response.participant_id, "question_id": response.question_id}
