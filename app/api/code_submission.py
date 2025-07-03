@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException
+from enum import Enum
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import uuid
 
 from app.db.session import SessionLocal
 from app.db import models
-from app.services.evaluator import evaluate_code
+from app.services.evaluator.evaluator import evaluate_code
+
+
+class InterventionType(Enum):
+    """Enum for intervention types."""
+    PRAGMATIC = "pragmatic"
+    CONTINGENT = "contingent"
+
 
 router = APIRouter()
 
@@ -38,7 +46,7 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     db.add(sub)
     db.commit()
     # Evaluate code (syntax + tests)
-    status, error = evaluate_code(submission.code, submission.snippet_id)
+    status, error = evaluate_code(submission.code, submission.snippet_id, InterventionType.CONTINGENT.value)
     sub.status = status
     sub.error_msg = error
     db.commit()

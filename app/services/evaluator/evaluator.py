@@ -7,6 +7,8 @@ import json
 from types import ModuleType
 from typing import Tuple
 
+from app.services.llm.intervention import get_rephrased_error_message
+
 # Each entry: snippet_id -> (function_name, list of (args, expected) tuples)
 TEST_SUITES = {
     "snippetA": (
@@ -53,12 +55,13 @@ def _load_module(path: str, module_name: str) -> ModuleType:
     return mod
 
 
-def evaluate_code(code: str, snippet_id: str) -> Tuple[str, str]:
+def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[str, str]:
     """
     1) Syntax‐check the code.
     2) Load module.
-    3) Dispatch to the right test suite.
-    4) Return (\"success\", \"\") or (\"syntax_error\"/\"test_failure\", details).
+    3) Dispatch to the right test suite
+    4) If errors are encountered, rephrase the error message using an LLM.
+    5) Return (\"success\", \"\") or (\"syntax_error\"/\"test_failure\", details).
     """
     # 1. Write to temp file
     with tempfile.TemporaryDirectory() as td:
@@ -90,20 +93,30 @@ def evaluate_code(code: str, snippet_id: str) -> Tuple[str, str]:
                 sys.executable, runner_path, path, func_name, test_cases_json, output_path
             ], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            return "runtime_error", e.output.decode()
+            error_msg = e.output.decode()
+            llm_msg = get_rephrased_error_message(code, error_msg, intervention_type)
+            return "runtime_error", llm_msg
 
         # 5. Parse results
         if not os.path.exists(output_path):
-            return "runtime_error", "No output from test runner."
+            llm_msg = get_rephrased_error_message(code, "No output from test runner.", intervention_type)
+            return "runtime_error", llm_msg
         with open(output_path) as f:
             result_data = json.load(f)
         if "error" in result_data:
-            return "runtime_error", result_data["error"]
+            llm_msg = get_rephrased_error_message(code, result_data["error"], intervention_type)
+            return "runtime_error", llm_msg
         results = result_data.get("results", [])
         for r in results:
             if not r.get("passed", False):
                 if "error" in r:
-                    return "runtime_error", r["error"]
+                    llm_msg = get_rephrased_error_message(code, r["error"], intervention_type)
+                    return "runtime_error", llm_msg
                 else:
-                    return "test_failure", f"For input {r['input']!r}, expected {r['expected']!r}, got {r['result']!r}"
+                    llm_msg = get_rephrased_error_message(
+                        code,
+                        f"For input {r['input']!r}, expected {r['expected']!r}, got {r['result']!r}",
+                        intervention_type
+                    )
+                    return "test_failure", llm_msg
         return "success", ""
