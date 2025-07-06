@@ -3,11 +3,21 @@ from openai import OpenAI
 from typing import Dict, Any, Iterator
 
 from app.core.config import OPENAI_API_KEY
+from app.utils.enums import ModelType
 
 # Constants for model types
 SUPPORTED_MODELS = {
-    "gpt-4o": "openai",
-    "llama3.2:3b": "ollama"
+    ModelType.OPENAI_GPT_4O.value: "openai",
+    ModelType.OLLAMA_LLAMA3_2_3B.value: "ollama",
+    ModelType.OLLAMA_LLAMA3_8B.value: "ollama",
+    ModelType.OLLAMA_CODELLAMA_7B.value: "ollama",
+    ModelType.OLLAMA_CODELLAMA_13B.value: "ollama",
+    ModelType.OLLAMA_MISTRAL_7B.value: "ollama",
+    ModelType.OLLAMA_CODESTRAL_22B.value: "ollama",
+    ModelType.OLLAMA_DEEPSEEK_R1_14B.value: "ollama",
+    ModelType.OLLAMA_QWEN3_14B.value: "ollama",
+    ModelType.OLLAMA_QWEN2_5_CODER_7_B.value: "ollama",
+    ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama"
 }
 
 
