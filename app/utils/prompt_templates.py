@@ -1,15 +1,14 @@
 PRAGMATIC_PROMPT_TEMPLATE = """
-INSTRUCTION: You are an assistant helping a Python programmer fix a code error. 
-Your goal is to briefly explain the error and suggest a fix **clearly and concisely**.
+INSTRUCTION: You are an assistant helping a Python programmer by briefly explaining the error.
 
 CONTEXT:
 The programmer's code and error message are below.
 ---
-Code snippet:
+CODE SNIPPET:
 ```python
 {code}
 ```
-Error Message:
+ERROR MESSAGE:
 ```
 {error}
 ```
@@ -17,14 +16,14 @@ Error Message:
 
 TASK:
 1. Identify the exception type and line number from the error message.
-2. Write a single short sentence explaining the cause of the error and hinting at how to fix it.
+2. Write a single short sentence explaining the cause of the error.
 
 FORMAT:
 * Output must start with <ExceptionType> at line <line>: followed by the explanation (no extra words before it).
 * Use plain, accessible language (avoid jargon).
-* Be direct and action-oriented. For example, "You're trying to X – try doing Y."
 * Do NOT reveal the exact corrected code. Only give a hint about what to do.
 * Output should be plain text only: no markdown, no code blocks, no lists.
+* Do not expose any internal reasoning or thought process – just the final explanation.
 
 EXAMPLE:
 ---

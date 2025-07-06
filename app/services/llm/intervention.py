@@ -15,7 +15,7 @@ def get_rephrased_error_message(code_snippet: str, error_msg: str, intervention_
         raise ValueError("Invalid intervention type. Must be 'pragmatic' or 'contingent'.")
 
     # Get the LLM client
-    llm_client = ModelFactory.create_client(ModelType.OLLAMA_LLAMA3_8B.value)
+    llm_client = ModelFactory.create_client(ModelType.OLLAMA_LLAMA3_2_3B.value)
 
     # Call the LLM to get the rephrased error message
     response = llm_client.complete(prompt)
