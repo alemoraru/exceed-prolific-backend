@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import engine
-from app.api import participants, code_submission, intervention
+from app.api import participants, code_submission
 from app.db.base import Base
 import app.db.models as models
 
@@ -17,7 +17,6 @@ def on_startup():
 
 app.include_router(participants.router, prefix="/api/participants", tags=["participants"])
 app.include_router(code_submission.router, prefix="/api/code", tags=["code_submission"])
-app.include_router(intervention.router, prefix="/api/intervention", tags=["intervention"])
 
 # Configure CORS
 origins = [

@@ -3,6 +3,7 @@ from app.db.base import Base
 
 
 class Participant(Base):
+    """Model representing a participant in the study."""
     __tablename__ = "participants"
     id = Column(String, primary_key=True, index=True)
     consent = Column(Boolean, nullable=False)
@@ -12,6 +13,7 @@ class Participant(Base):
 
 
 class Submission(Base):
+    """Model representing a code submission by a participant."""
     __tablename__ = "submissions"
     id = Column(String, primary_key=True, index=True)
     participant_id = Column(String, index=True)
@@ -22,6 +24,7 @@ class Submission(Base):
 
 
 class Intervention(Base):
+    """Model representing an intervention applied to a code submission."""
     __tablename__ = "interventions"
     id = Column(String, primary_key=True, index=True)
     participant_id = Column(String)
