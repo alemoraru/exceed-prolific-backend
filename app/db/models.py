@@ -10,6 +10,8 @@ class Participant(Base):
     skill_level = Column(String, index=True, nullable=True)
     python_yoe = Column(Integer, nullable=True)
     answers = Column(JSON, nullable=True)
+    mcq_questions = Column(JSON, nullable=True)
+    mcq_answer_map = Column(JSON, nullable=True)
 
 
 class Submission(Base):
@@ -21,15 +23,3 @@ class Submission(Base):
     code = Column(String)
     status = Column(String)
     error_msg = Column(String)
-
-
-class Intervention(Base):
-    """Model representing an intervention applied to a code submission."""
-    __tablename__ = "interventions"
-    id = Column(String, primary_key=True, index=True)
-    participant_id = Column(String)
-    snippet_id = Column(String)
-    code = Column(String)
-    error_msg = Column(String)
-    intervention_type = Column(String)
-    intervention_msg = Column(String)

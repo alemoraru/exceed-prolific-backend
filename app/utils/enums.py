@@ -18,5 +18,6 @@ class ModelType(Enum):
     OLLAMA_CODESTRAL_22B = "codestral:22b"
     OLLAMA_DEEPSEEK_R1_14B = "deepseek-r1:14b"
     OLLAMA_QWEN3_14B = "qwen3:14b"
+    OLLAMA_QWEN2_5_CODER_3_B = "qwen2.5-coder:3b"
     OLLAMA_QWEN2_5_CODER_7_B = "qwen2.5-coder:7b"
     OLLAMA_QWEN2_5_CODER_14_B = "qwen2.5-coder:14b"

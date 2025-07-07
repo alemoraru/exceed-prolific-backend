@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import engine
 from app.api import participants, code_submission
 from app.db.base import Base
+from app.core.config import PROLIFIC_FRONTEND_URL
 import app.db.models as models
 
 app = FastAPI(title="Error Message Study API")
@@ -20,7 +21,7 @@ app.include_router(code_submission.router, prefix="/api/code", tags=["code_submi
 
 # Configure CORS
 origins = [
-    "http://localhost:3000",  # local development
+    PROLIFIC_FRONTEND_URL
 ]
 
 app.add_middleware(

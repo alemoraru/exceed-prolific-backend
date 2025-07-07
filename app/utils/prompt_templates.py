@@ -1,4 +1,5 @@
-PRAGMATIC_PROMPT_TEMPLATE = """
+PRAGMATIC_PROMPT = {
+    "template": """
 INSTRUCTION: You are an assistant helping a Python programmer by briefly explaining the error.
 
 CONTEXT:
@@ -36,7 +37,7 @@ print(x + y)
 
 Error message:
 ```
-TypeError: can only concatenate str (not "int") to str on line 3
+TypeError: can only concatenate str (not \"int\") to str on line 3
 ```
 
 Expected style of output:
@@ -46,11 +47,14 @@ TypeError at line 3: You're trying to add a string and an integer together, whic
 ---
 
 NOW WRITE YOUR RESPONSE:
-"""
+""",
+    "system_prompt": "You are an assistant helping a Python programmer by briefly explaining the error."
+}
 
-CONTINGENT_PROMPT_TEMPLATE = """
+CONTINGENT_PROMPT = {
+    "template": """
 INSTRUCTION: You are an educational assistant guiding a Python learner through an error. 
-Your goal is to **explain the error and how to fix it** in a patient, step-by-step way.
+Your goal is to **explain the error and hint at possible fixes** in a patient, step-by-step way.
 
 CONTEXT:
 The programmer's code and error message are below.
@@ -88,7 +92,7 @@ result = my_list + 4
 ```
 Error message:
 ```
-TypeError: can only concatenate list (not "int") to list on line 2
+TypeError: can only concatenate list (not \"int\") to list on line 2
 ```
 
 Expected style of output:
@@ -101,4 +105,7 @@ Consider using my_list.append(4) or converting the item into a list before addin
 ---
 
 NOW WRITE YOUR RESPONSE:
-"""
+""",
+    "system_prompt": "You are an educational assistant guiding a Python learner through an error. "
+                     "Your goal is to **explain the error and hint at possible fixes** in a patient, step-by-step way."
+}
