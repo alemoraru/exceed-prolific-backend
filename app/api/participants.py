@@ -1,4 +1,3 @@
-from enum import Enum
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -6,6 +5,7 @@ import uuid
 
 from app.db.session import SessionLocal
 from app.db import models
+from app.data.questions import get_randomized_questions_for_participant
 
 router = APIRouter()
 
@@ -40,31 +40,7 @@ class QuestionResponse(BaseModel):
     participant_id: str
     question_id: str
     answer: str
-
-
-class QuestionId(Enum):
-    """Enum for question IDs to ensure consistency."""
-    Q1 = "q1"
-    Q2 = "q2"
-    Q3 = "q3"
-    Q4 = "q4"
-    Q5 = "q5"
-    Q6 = "q6"
-    Q7 = "q7"
-    Q8 = "q8"
-
-
-# TODO: Define correct answers for each question (perhaps in a config file)
-CORRECT_ANSWERS = {
-    QuestionId.Q1.value: "A",
-    QuestionId.Q2.value: "B",
-    QuestionId.Q3.value: "C",
-    QuestionId.Q4.value: "D",
-    QuestionId.Q5.value: "A",
-    QuestionId.Q6.value: "B",
-    QuestionId.Q7.value: "C",
-    QuestionId.Q8.value: "D"
-}
+    time_taken_ms: int
 
 
 @router.post("/consent", response_model=ConsentResult)
@@ -91,24 +67,53 @@ async def submit_experience(response: ExperienceResponse, db: Session = Depends(
     return {"participant_id": response.participant_id}
 
 
-@router.post("/question")
-async def submit_question(response: QuestionResponse, db: Session = Depends(get_db)):
-    participant = db.query(models.Participant).get(response.participant_id)
-
-    # Validate participant, consent, and question ID
+@router.get("/questions")
+async def get_questions(participant_id: str, db: Session = Depends(get_db)):
+    """
+    Serve the same randomized multiple-choice questions for a participant on every call.
+    On first call, randomize and store in the participant record. On subsequent calls, return the stored set.
+    """
+    participant = db.query(models.Participant).get(participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Consent is required to continue.")
-    if response.question_id not in QuestionId._value2member_map_:
-        raise HTTPException(status_code=400, detail="Invalid question ID")
 
+    # Only randomize and store in DB if not already present
+    if not participant.mcq_answer_map or not hasattr(participant, 'mcq_questions') or participant.mcq_questions is None:
+        questions, answer_map = get_randomized_questions_for_participant()
+        participant.mcq_answer_map = answer_map
+        participant.mcq_questions = questions
+        db.commit()
+
+    return participant.mcq_questions
+
+
+@router.post("/question")
+async def submit_question(response: QuestionResponse, db: Session = Depends(get_db)):
+    participant = db.query(models.Participant).get(response.participant_id)
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found")
+    if not participant.consent:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Consent is required to continue.")
+    if not participant.mcq_answer_map or response.question_id not in participant.mcq_answer_map:
+        raise HTTPException(status_code=400, detail="MCQ answer map not found or question not served to participant")
     # Prevent re-submission of the same question
     existing_answers = participant.answers or {}
     if response.question_id in existing_answers:
         raise HTTPException(status_code=400, detail="Question already answered")
-    # Append new answer
-    updated = {**existing_answers, response.question_id: response.answer}
+
+    # Validate answer index
+    try:
+        submitted_index = int(response.answer)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Answer must be an integer index of the selected option")
+    correct_index = participant.mcq_answer_map[response.question_id]
+    is_correct = submitted_index == correct_index
+    updated = {
+        **existing_answers,
+        response.question_id: {"answer": submitted_index, "time_taken_ms": response.time_taken_ms}
+    }
     participant.answers = updated
     db.commit()
 
@@ -116,7 +121,7 @@ async def submit_question(response: QuestionResponse, db: Session = Depends(get_
     if len(updated) == 8:
         correct_count = sum(
             1 for qid, ans in updated.items()
-            if CORRECT_ANSWERS.get(qid) == ans
+            if participant.mcq_answer_map.get(qid) is not None and ans["answer"] == participant.mcq_answer_map[qid]
         )
         yoe = participant.python_yoe or 0
         skill_level = None

@@ -2,7 +2,7 @@ import httpx
 from openai import OpenAI
 from typing import Dict, Any, Iterator
 
-from app.core.config import OPENAI_API_KEY
+from app.core.config import OPENAI_API_KEY, OLLAMA_URL
 from app.utils.enums import ModelType
 
 # Constants for model types
@@ -16,6 +16,7 @@ SUPPORTED_MODELS = {
     ModelType.OLLAMA_CODESTRAL_22B.value: "ollama",
     ModelType.OLLAMA_DEEPSEEK_R1_14B.value: "ollama",
     ModelType.OLLAMA_QWEN3_14B.value: "ollama",
+    ModelType.OLLAMA_QWEN2_5_CODER_3_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_7_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama"
 }
@@ -26,7 +27,7 @@ class BaseModelClient:
     Base class for LLM clients that can generate intervention messages.
     """
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, system_prompt: str = None) -> str:
         """Generate a completion based on the provided prompt."""
         raise NotImplementedError("This method should be implemented by subclasses.")
 
@@ -40,15 +41,21 @@ class OpenAIClient(BaseModelClient):
         self.model = model
         self.client = OpenAI(api_key=OPENAI_API_KEY)
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, system_prompt: str = None) -> str:
         """
         Call the OpenAI API to generate a completion based on the provided prompt.
         """
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model=self.model,
             messages=[
-                {"role": "system", "content": "You are an AI assistant helping a Python programmer fix a code error"},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": system_prompt if system_prompt else "You are an AI assistant helping a Python programmer understand a code error"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ]
         )
         return response.choices[0].message.content
@@ -60,20 +67,24 @@ class OllamaClient(BaseModelClient):
     See: https://github.com/ollama/ollama/blob/main/docs/api.md
     """
 
-    def __init__(self, model: str = "llama:3.2:3b", temperature: float = 0.7):
+    def __init__(self, model: str = "llama:3.2:3b", temperature: float = 1.0):
         self.model = model
         self.temperature = temperature
-        self.base_url = "http://localhost:11434"
+        self.base_url = OLLAMA_URL
         self._client = httpx.Client(timeout=120)
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, system_prompt: str = None) -> str:
         payload: Dict[str, Any] = {
             "model": self.model,
             "temperature": self.temperature,
             "prompt": prompt,
             "stream": False,
         }
-        url = "http://localhost:11434/api/generate"
+        # Include system prompt if provided
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        url = f"{self.base_url}/api/generate"
         response = self._client.post(url, json=payload)
         response.raise_for_status()
         return response.json()["response"]
