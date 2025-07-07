@@ -57,6 +57,7 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
             ], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             return "syntax_error", e.output.decode()
+
         # Run only the relevant test class
         try:
             result = subprocess.run(

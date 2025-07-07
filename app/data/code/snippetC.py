@@ -1,9 +1,16 @@
-def get_third_element(lst):
-    """
-    Return the third element of the list.
-    Args:
-        lst (list): A list of elements.
-    Returns:
-        Any: The third element.
-    """
-    return lst[2]
+class ScoreTracker:
+    def __init__(self):
+        """Initializes with a list of recent test scores."""
+        self.scores = [85, 90, 88, 92]
+
+    def print_last_score(self):
+        """Prints the last score in the list."""
+        print("Last score:", self.scores[len(self.scores)])
+
+
+def main():
+    tracker = ScoreTracker()
+    tracker.print_last_score()
+
+
+main()

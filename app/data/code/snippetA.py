@@ -1,12 +1,19 @@
-def build_list(n):
-    """
-    Build a list of integers from 0 up to n-1.
-    Args:
-        n (int): The length of the list.
-    Returns:
-        list[int]: A list of integers.
-    """
-    result = []
-    for i in range(n):
-        result = result.append(i)
-    return result
+class SalesProcessor:
+    def __init__(self):
+        """Initializes the processor with sales data."""
+        self.sales_data = ['100', '200', '150', '175']
+
+    def total_sales(self):
+        """Returns the total sales as the sum of all sales in the list."""
+        total = 0
+        for sale in self.sales_data:
+            total += sale
+        return total
+
+
+def main():
+    processor = SalesProcessor()
+    print("Total sales:", processor.total_sales())
+
+
+main()

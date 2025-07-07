@@ -8,13 +8,6 @@ SNIPPET_FILES = {
     "3": "snippetD.py",
 }
 
-ERRORS = {
-    "0": '''Traceback (most recent call last):\n  File "main.py", line 17, in <module>\n    build_list(10)\n  File "main.py", line 11, in build_list\n    result = result.append(i)\n             ^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'append\'''',
-    "1": '''Traceback (most recent call last):\n  File "main.py", line 6, in top_three\n    return sorted_items[:3]\nTypeError: 'NoneType' object is not subscriptable''',
-    "2": '''Traceback (most recent call last):\n  File "main.py", line 5, in get_third_element\n    return lst[2]\nIndexError: list index out of range''',
-    "3": '''Traceback (most recent call last):\n  File "main.py", line 6, in parse_numbers\n    return [int(x) for x in data.split(',')]\nAttributeError: 'list' object has no attribute 'split''',
-}
-
 
 def read_snippet(filename: str) -> str:
     """Read a code snippet from a file."""
@@ -23,10 +16,17 @@ def read_snippet(filename: str) -> str:
         return f.read()
 
 
+def read_error(snippet_key: str) -> str:
+    error_file = f"{SNIPPET_FILES[snippet_key].replace('.py', '_error.txt')}"
+    error_path = os.path.join(os.path.dirname(__file__), 'code', error_file)
+    with open(error_path, 'r') as f:
+        return f.read()
+
+
 SNIPPETS: Dict[str, dict] = {
     key: {
         "code": read_snippet(filename),
-        "error": ERRORS[key],
+        "error": read_error(key),
         "filename": filename,
     }
     for key, filename in SNIPPET_FILES.items()
