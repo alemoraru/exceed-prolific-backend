@@ -1,23 +1,23 @@
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 SNIPPET_FILES = {
-    "0": "snippetA.py",
-    "1": "snippetB.py",
-    "2": "snippetC.py",
-    "3": "snippetD.py",
+    "0": ("snippetA/snippetA.py", "snippetA/snippetA_error.txt"),
+    "1": ("snippetB/snippetB.py", "snippetB/snippetB_error.txt"),
+    "2": ("snippetC/snippetC.py", "snippetC/snippetC_error.txt"),
+    "3": ("snippetD/snippetD.py", "snippetD/snippetD_error.txt"),
 }
 
 
-def read_snippet(filename: str) -> str:
+def read_snippet(filename: Tuple[str, str]) -> str:
     """Read a code snippet from a file."""
-    path = os.path.join(os.path.dirname(__file__), "code", filename)
+    path = os.path.join(os.path.dirname(__file__), "code", filename[0])
     with open(path, "r") as f:
         return f.read()
 
 
 def read_error(snippet_key: str) -> str:
-    error_file = f"{SNIPPET_FILES[snippet_key].replace('.py', '_error.txt')}"
+    code_file, error_file = SNIPPET_FILES[snippet_key]
     error_path = os.path.join(os.path.dirname(__file__), 'code', error_file)
     with open(error_path, 'r') as f:
         return f.read()

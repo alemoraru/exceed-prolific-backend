@@ -67,7 +67,7 @@ class OllamaClient(BaseModelClient):
     See: https://github.com/ollama/ollama/blob/main/docs/api.md
     """
 
-    def __init__(self, model: str = "llama:3.2:3b", temperature: float = 1.0):
+    def __init__(self, model: str = "llama:3.2:3b", temperature: float = 0.2):
         self.model = model
         self.temperature = temperature
         self.base_url = OLLAMA_URL

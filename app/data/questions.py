@@ -50,10 +50,10 @@ QUESTIONS: List[Question] = [
         "question": "The following Python code does not correctly print the double of a number. Choose the option that best resolves the logical error while maintaining the intended functionality.",
         "code": 'double = lambda x: x * 2\n' + 'print(double)',
         "options": [
-            'Surround "x * 2" with print()',
-            'Replace "lambda" with "def" to make it work',
-            'Call the "double" function by adding parentheses with an argument',
-            'Remove the "lambda" and just write "x * 2"'
+            'Surround `x * 2` with `print()`',
+            'Replace `lambda` with `def` to make it work',
+            'Call the `double` function by adding parentheses with an argument',
+            'Remove the `lambda` and just write `x * 2`'
         ],
         "error": None,
         "correctAnswer": 2
@@ -65,9 +65,9 @@ QUESTIONS: List[Question] = [
         "code": 'x = int("0")\n' + 'if x != 0 and (10 / x) > 2:\n' + '    print("Division succeeded")\n' + 'print("Could not divide by " + str(x))',
         "options": [
             "The code contains a syntax error and won't run properly",
-            'The condition should use "or" instead of "and", because "and" forces evaluation of both sides of the condition, which throws an error',
+            'The condition should use `or` instead of `and`, because `and` forces evaluation of both sides of the condition, which throws an error',
             'Division by zero error is avoided due to short-circuit logic',
-            'The code contains a "TypeError" as "0" can be ambiguously interpreted to different primitive types'
+            'The code contains a `TypeError` as `0` can be ambiguously interpreted to different primitive types'
         ],
         "error": None,
         "correctAnswer": 2
@@ -96,7 +96,7 @@ QUESTIONS: List[Question] = [
             'The function definition is missing a colon at the end',
             'The function is missing a return statement',
             'There’s a problem with the indentation of the function',
-            'The variable "my_function" hasn\'t been assigned a value'
+            'The variable `my_function` hasn\'t been assigned a value'
         ],
         "correctAnswer": 0
     },
@@ -109,7 +109,7 @@ QUESTIONS: List[Question] = [
         "options": [
             'The key might have been altered or removed elsewhere in the code',
             'The key is actually a string, but you’re trying to access it with an integer',
-            'There\'s a typo in the key you are trying to access (e.g., "User" vs "user"), or the case sensitivity is different than expected',
+            'There\'s a typo in the key you are trying to access (e.g., `"User"` vs `"user"`), or the case sensitivity is different than expected',
             'Dictionaries can sometimes fail to locate keys due to internal hashing bugs or collisions'
         ],
         "correctAnswer": 2
@@ -121,10 +121,10 @@ QUESTIONS: List[Question] = [
         "code": 'def find_max(numbers):\n' + '    max_val = 0\n' + '    for num in numbers:\n' + '        if num > max_val:\n' + '            max_val = num\n' + '    return max_val\n\n' + 'result = find_max([-10, -5, -3])',
         "error": None,
         "options": [
-            'It incorrectly returns the wrong number instead of the maximum value due to improper initialization of "max_val"',
+            'It incorrectly returns the wrong number instead of the maximum value due to improper initialization of `max_val`',
             'The for loop is structured incorrectly as it does not iterate through all of the array\'s values.',
             'It raises an exception due to negative values being present in the list.',
-            'There is no logical error present; the code correctly assigns the value of "-3" to the "result" variable.'
+            'There is no logical error present; the code correctly assigns the value of `-3` to the `result` variable.'
         ],
         "correctAnswer": 0
     }
