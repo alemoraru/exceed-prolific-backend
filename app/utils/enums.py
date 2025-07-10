@@ -3,12 +3,14 @@ from enum import Enum
 
 class InterventionType(Enum):
     """Enum for intervention types."""
+
     PRAGMATIC = "pragmatic"
     CONTINGENT = "contingent"
 
 
 class ModelType(Enum):
     """Enum for model names."""
+
     OPENAI_GPT_4O = "gpt-4o"
     OLLAMA_LLAMA3_2_3B = "llama3.2:3b"
     OLLAMA_LLAMA3_8B = "llama3:8b"

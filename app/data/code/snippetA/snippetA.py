@@ -14,8 +14,10 @@ class SalesProcessor:
         """
 
         self.sales_data = [
-            SalesRecord('100'), SalesRecord(200),
-            SalesRecord('150.5'), SalesRecord(175)
+            SalesRecord("100"),
+            SalesRecord(200),
+            SalesRecord("150.5"),
+            SalesRecord(175),
         ]
 
     def add_sales_record(self, data: SalesRecord):
@@ -55,5 +57,5 @@ def main():
     print("Total sales:", processor.total_sales())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

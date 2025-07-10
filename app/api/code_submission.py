@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 import uuid
 
-from app.db.session import SessionLocal
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.data.snippets import get_snippet
 from app.db import models
+from app.db.session import SessionLocal
 from app.services.evaluator.evaluator import evaluate_code
 from app.utils.enums import InterventionType
-from app.data.snippets import get_snippet
 
 router = APIRouter()
 
@@ -24,6 +25,7 @@ class CodeSubmission(BaseModel):
     """
     Model for code submission containing participant ID, snippet ID, and code.
     """
+
     participant_id: str
     snippet_id: str
     code: str
@@ -49,16 +51,14 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
         snippet_id=submission.snippet_id,
         code=submission.code,
         status="pending",
-        error_msg=None
+        error_msg=None,
     )
     db.add(sub)
     db.commit()
 
     # Evaluate code (syntax + tests)
     status, error = evaluate_code(
-        submission.code,
-        submission.snippet_id,
-        InterventionType.CONTINGENT.value
+        submission.code, submission.snippet_id, InterventionType.CONTINGENT.value
     )
 
     sub.status = status
@@ -69,7 +69,9 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
 
 
 @router.get("/snippet/{snippet_id}")
-def get_code_snippet(snippet_id: str, participant_id: str, db: Session = Depends(get_db)):
+def get_code_snippet(
+    snippet_id: str, participant_id: str, db: Session = Depends(get_db)
+):
     """
     Retrieve the code snippet for a given snippet ID and participant ID.
     :param snippet_id: The ID of the code snippet to retrieve.
@@ -85,8 +87,4 @@ def get_code_snippet(snippet_id: str, participant_id: str, db: Session = Depends
     snippet = get_snippet(snippet_id)
     if not snippet:
         raise HTTPException(status_code=404, detail="Snippet not found")
-    return {
-        "id": snippet_id,
-        "code": snippet["code"],
-        "error": snippet["error"]
-    }
+    return {"id": snippet_id, "code": snippet["code"], "error": snippet["error"]}

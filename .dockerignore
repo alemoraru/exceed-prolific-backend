@@ -1,0 +1,10 @@
+.venv
+.dockerignore
+.env
+.env_local
+.gitignore
+.git
+.github
+.idea
+pyproject.toml
+README.md

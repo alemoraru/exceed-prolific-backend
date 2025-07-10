@@ -1,5 +1,5 @@
-import sys
 import json
+import sys
 import traceback
 
 if len(sys.argv) != 5:
@@ -40,19 +40,29 @@ for case in test_cases:
         else:
             result = func(inp)
         passed = result == expected
-        results.append({"input": inp, "expected": expected, "result": result, "passed": passed})
+        results.append(
+            {"input": inp, "expected": expected, "result": result, "passed": passed}
+        )
     except Exception as e:
         tb = traceback.TracebackException(type(e), e, e.__traceback__)
         user_frames = []
         for frame in tb.stack:
             if user_code_path in frame.filename:
-                user_frames.append(f'  File "main.py", line {frame.lineno}, in {frame.name}\n    {frame.line}')
+                user_frames.append(
+                    f'  File "main.py", line {frame.lineno}, in {frame.name}\n    {frame.line}'
+                )
         error_message = f"{type(e).__name__}: {e}"
         if user_frames:
-            tb_filtered = "Traceback (most recent call last):\n" + "\n".join(user_frames) + f"\n{error_message}"
+            tb_filtered = (
+                "Traceback (most recent call last):\n"
+                + "\n".join(user_frames)
+                + f"\n{error_message}"
+            )
         else:
             tb_filtered = error_message
-        results.append({"input": inp, "expected": expected, "error": tb_filtered, "passed": False})
+        results.append(
+            {"input": inp, "expected": expected, "error": tb_filtered, "passed": False}
+        )
 
 with open(output_path, "w") as f:
     f.write(json.dumps({"results": results}))
