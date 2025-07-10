@@ -1,11 +1,13 @@
 PRAGMATIC_PROMPT = {
+    "system_prompt": "You are an assistant helping a Python programmer by briefly explaining the error.",
     "template": """
-INSTRUCTION: You are an assistant helping a Python programmer by briefly explaining the error.
+INSTRUCTION:
+You are an assistant helping a Python programmer by explaining the error, in a clear and concise way.
 
 CONTEXT:
-The programmer's code and error message are below.
+The programmer's code and error message are below:
 ---
-CODE SNIPPET:
+CODE:
 ```python
 {code}
 ```
@@ -14,98 +16,95 @@ ERROR MESSAGE:
 {error}
 ```
 ---
-
 TASK:
-1. Identify the exception type and line number from the error message.
-2. Write a single short sentence explaining the cause of the error.
+
+Extract the exception type and line number from ERROR.
+Write exactly one sentence (around 25-30 words or less) that:
+- Begins with "<ExceptionType> at line <line>:"
+- Briefly states the cause and hints at a fix.
+- Uses plain language—no jargon.
+- Does NOT include the corrected code.
 
 FORMAT:
-* Output must start with <ExceptionType> at line <line>: followed by the explanation (no extra words before it).
-* Use plain, accessible language (avoid jargon).
-* Do NOT reveal the exact corrected code. Only give a hint about what to do.
-* Output should be plain text only: no markdown, no code blocks, no lists.
-* Do not expose any internal reasoning or thought process – just the final explanation.
+Output must be plain text only—no markdown, code fences, or lists.
 
-EXAMPLE:
 ---
-Code snippet:
+EXAMPLE:
+
+CODE:
 ```python
-x = "hello"
-y = 5
+x = "hi"
+y = 1
 print(x + y)
 ```
 
-Error message:
+ERROR MESSAGE:
 ```
-TypeError: can only concatenate str (not \"int\") to str on line 3
+TypeError: can only concatenate str (not "int") to str on line 3
 ```
 
-Expected style of output:
+DESIRED OUTPUT:
 ```
-TypeError at line 3: You're trying to add a string and an integer together, which is not allowed in python – convert one to the other type.
+TypeError at line 3: Did you mean to convert the integer to a string before concatenation? The error occurs because you cannot add a string and an integer directly in Python.
 ```
 ---
 
 NOW WRITE YOUR RESPONSE:
-""",
-    "system_prompt": "You are an assistant helping a Python programmer by briefly explaining the error."
+"""
 }
 
 CONTINGENT_PROMPT = {
+    "system_prompt": "You are an educational assistant guiding a Python programmer through an error with a step-by-step explanation.",
     "template": """
-INSTRUCTION: You are an educational assistant guiding a Python learner through an error. 
-Your goal is to **explain the error and hint at possible fixes** in a patient, step-by-step way.
+INSTRUCTION:
+You will guide a Python programmer through their Python error in 3–5 supportive sentences.
 
 CONTEXT:
-The programmer's code and error message are below.
+The programmer's code and error message are below:
 ---
-Code snippet:
+CODE:
 ```python
 {code}
 ```
-Error Message:
+ERROR MESSAGE:
 ```
 {error}
 ```
 ---
 TASK:
-1. Extract the exception type and line number from the error message.
-2. Start your response with a header in the format <ExceptionType> at line <line>: (include the colon).
-3. After that, write a 3-5 sentence explanation following these guidelines:
+1. Extract the exception type and line number from ERROR.
+2. Begin your response with "<ExceptionType> at line <line>:" on the first line.
+3. Then write 3–5 sentences that:
     * Begin by confirming the likely intent or goal (e.g. "Did you mean to ...?") – this is the claim, showing you understand what they wanted.
-    * Next, in plain language, describe why the error happened (this is the explanation of the problem – the grounds/warrant).
-    * Optionally, give a little more insight or an example as backing if it helps understanding (but keep it brief).
+    * Explain plainly why the error occurred, avoiding jargon and keeping it simple.
+    * Optionally provide a brief example or insight.
     * End with a hint or question that guides them toward the fix (without giving the exact code). For example, ask if they considered a certain approach, or suggest a function to use, without outright providing the solution code.
-4. Keep the tone supportive and the language simple.
 
 FORMAT:
-* Output must be in plain text, with no markdown formatting.
-* The first line must be the header <ExceptionType> at line <line>: exactly, followed by your explanation in normal sentences (no code blocks or lists).
-* Do not show any fixed code. Do not use backticks or quotes around your answer – just write it as regular text sentences.
+Output must be plain text only—no markdown, code fences, or lists.
 
-EXAMPLE:
 ---
-Code snippet:
+EXAMPLE:
+
+CODE:
 ```python
 my_list = [1, 2, 3]
 result = my_list + 4
 ```
-Error message:
+ERROR MESSAGE:
 ```
 TypeError: can only concatenate list (not \"int\") to list on line 2
 ```
 
-Expected style of output:
+DESIRED OUTPUT:
 ```
-TypeError at line 3: Did you mean to add a single item to the list? 
-The error occurred because the code is trying to add an integer directly to a list, which isn’t allowed. 
-In Python, you can only concatenate a list with another list (or use methods like append for single items). 
-Consider using my_list.append(4) or converting the item into a list before adding.
+TypeError at line 2: Did you mean to add a single item to your list? 
+The error occurred because you tried to join an integer to a list directly. 
+In Python, you can only concatenate lists or use list methods for items. 
+Try using append instead of the '+' operator.
 ```
 ---
 
 NOW WRITE YOUR RESPONSE:
-""",
-    "system_prompt": "You are an educational assistant guiding a Python learner through an error. "
-                     "Your goal is to **explain the error and hint at possible fixes** in a patient, step-by-step way."
+"""
 }

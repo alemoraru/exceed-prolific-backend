@@ -28,27 +28,32 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
     5) Return ("success", "") or ("syntax_error"/"test_failure", details).
     """
     snippet_map = {
-        "0": ("snippetA.py", "TestSnippetA"),
-        "1": ("snippetB.py", "TestSnippetB"),
-        "2": ("snippetC.py", "TestSnippetC"),
-        "3": ("snippetD.py", "TestSnippetD"),
+        "0": ("snippetA/snippetA.py", "snippetA/test_snippetA.py", "TestSnippetA"),
+        "1": ("snippetB/snippetB.py", "snippetB/test_snippetB.py", "TestSnippetB"),
+        "2": ("snippetC/snippetC.py", "snippetC/test_snippetC.py", "TestSnippetC"),
+        "3": ("snippetD/snippetD.py", "snippetD/test_snippetD.py", "TestSnippetD"),
     }
     if snippet_id not in snippet_map:
         return "no_tests", f"No test suite defined for {snippet_id}"
-    snippet_file, test_class = snippet_map[snippet_id]
+    snippet_file, test_file, test_class = snippet_map[snippet_id]
     code_dir = os.path.join(os.path.dirname(__file__), '../../data/code')
 
     with tempfile.TemporaryDirectory() as td:
         # Write user code to temp dir (overwriting the reference snippet file)
-        user_code_path = os.path.join(td, snippet_file)
+        user_code_path = os.path.join(td, os.path.basename(snippet_file))
         with open(user_code_path, "w") as f:
             f.write(code)
-        # Copy all other snippet files and test_snippets.py
-        for fname in ["snippetA.py", "snippetB.py", "snippetC.py", "snippetD.py", "test_snippets.py"]:
-            src = os.path.join(code_dir, fname)
-            dst = os.path.join(td, fname)
-            if fname != snippet_file:  # Don't overwrite user code
+        # Copy all other snippet files (from their folders)
+        for folder in ["snippetA", "snippetB", "snippetC", "snippetD"]:
+            src = os.path.join(code_dir, folder, f"{folder}.py")
+            dst = os.path.join(td, f"{folder}.py")
+            if src != os.path.join(code_dir, snippet_file):
                 shutil.copyfile(src, dst)
+
+        # Copy only the relevant test file from its snippet folder
+        test_src = os.path.join(code_dir, test_file)
+        test_dst = os.path.join(td, os.path.basename(test_file))
+        shutil.copyfile(test_src, test_dst)
 
         # Syntax check user code
         try:
@@ -58,10 +63,10 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
         except subprocess.CalledProcessError as e:
             return "syntax_error", e.output.decode()
 
-        # Run only the relevant test class
+        # Run only the relevant test class in the relevant test file
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "unittest", f"test_snippets.{test_class}"],
+                [sys.executable, "-m", "unittest", f"{os.path.splitext(os.path.basename(test_file))[0]}.{test_class}"],
                 cwd=td,
                 capture_output=True,
                 text=True,
