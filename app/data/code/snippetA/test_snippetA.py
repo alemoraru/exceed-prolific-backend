@@ -1,4 +1,5 @@
 import unittest
+
 from snippetA import SalesProcessor, SalesRecord
 
 

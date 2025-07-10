@@ -1,9 +1,10 @@
 import unittest
+
 from snippetB import (
-    UserProfile,
-    SessionManager,
-    load_user_data_from_string,
     SIMULATED_CONFIG,
+    SessionManager,
+    UserProfile,
+    load_user_data_from_string,
 )
 
 

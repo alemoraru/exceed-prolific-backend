@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 import uuid
 
-from app.db.session import SessionLocal
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.data.snippets import get_snippet
 from app.db import models
+from app.db.session import SessionLocal
 from app.services.evaluator.evaluator import evaluate_code
 from app.utils.enums import InterventionType
-from app.data.snippets import get_snippet
 
 router = APIRouter()
 

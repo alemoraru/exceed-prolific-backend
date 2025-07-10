@@ -1,8 +1,9 @@
+from typing import Any, Dict, Iterator
+
 import httpx
 from openai import OpenAI
-from typing import Dict, Any, Iterator
 
-from app.core.config import OPENAI_API_KEY, OLLAMA_URL
+from app.core.config import OLLAMA_URL, OPENAI_API_KEY
 from app.utils.enums import ModelType
 
 # Constants for model types

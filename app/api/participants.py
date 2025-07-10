@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 import uuid
 
-from app.db.session import SessionLocal
-from app.db import models
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from app.data.questions import get_randomized_questions_for_participant
+from app.db import models
+from app.db.session import SessionLocal
 
 router = APIRouter()
 

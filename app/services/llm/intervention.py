@@ -1,6 +1,6 @@
-from app.utils.enums import ModelType
-from app.utils.prompt_templates import PRAGMATIC_PROMPT, CONTINGENT_PROMPT
 from app.services.llm.llm_client import ModelFactory
+from app.utils.enums import ModelType
+from app.utils.prompt_templates import CONTINGENT_PROMPT, PRAGMATIC_PROMPT
 
 
 def get_rephrased_error_message(

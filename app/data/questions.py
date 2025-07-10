@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional, TypedDict, Any
+from typing import Any, List, Optional, TypedDict
 
 
 class Question(TypedDict):

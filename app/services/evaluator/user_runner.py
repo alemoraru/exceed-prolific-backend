@@ -1,5 +1,5 @@
-import sys
 import json
+import sys
 import traceback
 
 if len(sys.argv) != 5:
