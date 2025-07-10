@@ -50,7 +50,7 @@ TypeError at line 3: Did you mean to convert the integer to a string before conc
 ---
 
 NOW WRITE YOUR RESPONSE:
-"""
+""",
 }
 
 CONTINGENT_PROMPT = {
@@ -106,5 +106,5 @@ Try using append instead of the '+' operator.
 ---
 
 NOW WRITE YOUR RESPONSE:
-"""
+""",
 }

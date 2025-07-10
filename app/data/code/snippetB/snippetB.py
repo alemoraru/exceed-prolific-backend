@@ -39,7 +39,7 @@ class SessionManager:
     def start_session(self):
         """Start a user session with the configured timeout."""
         timeout = self.profile.get_timeout()
-        name = self.profile.data.get('name', '<unknown>')
+        name = self.profile.data.get("name", "<unknown>")
         print(f"Starting session for {name} (timeout: {timeout}s)")
 
 
@@ -55,5 +55,5 @@ def main():
     manager.start_session()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

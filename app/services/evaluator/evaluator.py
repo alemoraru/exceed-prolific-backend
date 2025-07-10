@@ -19,7 +19,9 @@ def _load_module(path: str, module_name: str) -> ModuleType:
     return mod
 
 
-def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[str, str]:
+def evaluate_code(
+    code: str, snippet_id: str, intervention_type: str
+) -> Tuple[str, str]:
     """
     1) Syntax‐check the code.
     2) Copy user code and test suite to temp dir.
@@ -36,7 +38,7 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
     if snippet_id not in snippet_map:
         return "no_tests", f"No test suite defined for {snippet_id}"
     snippet_file, test_file, test_class = snippet_map[snippet_id]
-    code_dir = os.path.join(os.path.dirname(__file__), '../../data/code')
+    code_dir = os.path.join(os.path.dirname(__file__), "../../data/code")
 
     with tempfile.TemporaryDirectory() as td:
         # Write user code to temp dir (overwriting the reference snippet file)
@@ -57,20 +59,26 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
 
         # Syntax check user code
         try:
-            subprocess.check_output([
-                sys.executable, "-m", "py_compile", user_code_path
-            ], stderr=subprocess.STDOUT)
+            subprocess.check_output(
+                [sys.executable, "-m", "py_compile", user_code_path],
+                stderr=subprocess.STDOUT,
+            )
         except subprocess.CalledProcessError as e:
             return "syntax_error", e.output.decode()
 
         # Run only the relevant test class in the relevant test file
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "unittest", f"{os.path.splitext(os.path.basename(test_file))[0]}.{test_class}"],
+                [
+                    sys.executable,
+                    "-m",
+                    "unittest",
+                    f"{os.path.splitext(os.path.basename(test_file))[0]}.{test_class}",
+                ],
                 cwd=td,
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
         except Exception as e:
             llm_msg = get_rephrased_error_message(code, str(e), intervention_type)
@@ -78,5 +86,7 @@ def evaluate_code(code: str, snippet_id: str, intervention_type: str) -> Tuple[s
         if result.returncode == 0:
             return "success", ""
         else:
-            llm_msg = get_rephrased_error_message(code, result.stderr + "\n" + result.stdout, intervention_type)
+            llm_msg = get_rephrased_error_message(
+                code, result.stderr + "\n" + result.stdout, intervention_type
+            )
             return "test_failure", llm_msg

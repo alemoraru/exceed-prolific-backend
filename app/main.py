@@ -16,13 +16,13 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
 
 
-app.include_router(participants.router, prefix="/api/participants", tags=["participants"])
+app.include_router(
+    participants.router, prefix="/api/participants", tags=["participants"]
+)
 app.include_router(code_submission.router, prefix="/api/code", tags=["code_submission"])
 
 # Configure CORS
-origins = [
-    PROLIFIC_FRONTEND_URL
-]
+origins = [PROLIFIC_FRONTEND_URL]
 
 app.add_middleware(
     CORSMiddleware,

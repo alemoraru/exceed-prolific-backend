@@ -18,7 +18,7 @@ SUPPORTED_MODELS = {
     ModelType.OLLAMA_QWEN3_14B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_3_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_7_B.value: "ollama",
-    ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama"
+    ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama",
 }
 
 
@@ -50,13 +50,14 @@ class OpenAIClient(BaseModelClient):
             messages=[
                 {
                     "role": "system",
-                    "content": system_prompt if system_prompt else "You are an AI assistant helping a Python programmer understand a code error"
+                    "content": (
+                        system_prompt
+                        if system_prompt
+                        else "You are an AI assistant helping a Python programmer understand a code error"
+                    ),
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+                {"role": "user", "content": prompt},
+            ],
         )
         return response.choices[0].message.content
 

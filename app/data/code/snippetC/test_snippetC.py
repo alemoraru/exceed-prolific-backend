@@ -35,7 +35,7 @@ class TestSnippetC(unittest.TestCase):
 
     def test_scores_with_mixed_types(self):
         tracker = ScoreTracker()
-        tracker.scores = [10, '20', 30, 40]
+        tracker.scores = [10, "20", 30, 40]
         with self.assertRaises(Exception):
             tracker.print_last_score()
 
