@@ -23,7 +23,7 @@ def get_rephrased_error_message(
         )
 
     # Get the LLM client
-    llm_client = ModelFactory.create_client(ModelType.OLLAMA_QWEN2_5_CODER_3_B.value)
+    llm_client = ModelFactory.create_client(ModelType.OLLAMA_LLAMA3_1_8B.value)
 
     # Call the LLM to get the rephrased error message
     response = llm_client.complete(prompt, system_prompt=system_prompt)
