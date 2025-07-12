@@ -13,7 +13,7 @@ class ModelType(Enum):
 
     OPENAI_GPT_4O = "gpt-4o"
     OLLAMA_LLAMA3_2_3B = "llama3.2:3b"
-    OLLAMA_LLAMA3_8B = "llama3:8b"
+    OLLAMA_LLAMA3_1_8B = "llama3.1:8b"
     OLLAMA_CODELLAMA_7B = "codellama:7b"
     OLLAMA_CODELLAMA_13B = "codellama:13b"
     OLLAMA_MISTRAL_7B = "mistral:7b"

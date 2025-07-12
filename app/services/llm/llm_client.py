@@ -10,7 +10,7 @@ from app.utils.enums import ModelType
 SUPPORTED_MODELS = {
     ModelType.OPENAI_GPT_4O.value: "openai",
     ModelType.OLLAMA_LLAMA3_2_3B.value: "ollama",
-    ModelType.OLLAMA_LLAMA3_8B.value: "ollama",
+    ModelType.OLLAMA_LLAMA3_1_8B.value: "ollama",
     ModelType.OLLAMA_CODELLAMA_7B.value: "ollama",
     ModelType.OLLAMA_CODELLAMA_13B.value: "ollama",
     ModelType.OLLAMA_MISTRAL_7B.value: "ollama",
