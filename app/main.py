@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import app.db.models as models
 from app.api import code_submission, participants
-from app.core.config import PROLIFIC_FRONTEND_URL
+from app.core.config import FRONTEND_URL
 from app.db.base import Base
 from app.db.session import engine
 
@@ -22,7 +21,7 @@ app.include_router(
 app.include_router(code_submission.router, prefix="/api/code", tags=["code_submission"])
 
 # Configure CORS
-origins = [PROLIFIC_FRONTEND_URL]
+origins = [FRONTEND_URL]
 
 app.add_middleware(
     CORSMiddleware,
