@@ -1,5 +1,5 @@
+from app.core.config import OLLAMA_MODEL
 from app.services.llm.llm_client import ModelFactory
-from app.utils.enums import ModelType
 from app.utils.prompt_templates import CONTINGENT_PROMPT, PRAGMATIC_PROMPT
 
 
@@ -23,7 +23,7 @@ def get_rephrased_error_message(
         )
 
     # Get the LLM client
-    llm_client = ModelFactory.create_client(ModelType.OLLAMA_LLAMA3_1_8B.value)
+    llm_client = ModelFactory.create_client(OLLAMA_MODEL)
 
     # Call the LLM to get the rephrased error message
     response = llm_client.complete(prompt, system_prompt=system_prompt)
