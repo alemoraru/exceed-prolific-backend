@@ -22,6 +22,7 @@ def get_db():
 class ConsentResponse(BaseModel):
     """Model for participant consent response."""
 
+    participant_id: str
     consent: bool
 
 
@@ -50,8 +51,9 @@ class QuestionResponse(BaseModel):
 
 @router.post("/consent", response_model=ConsentResult)
 async def submit_consent(response: ConsentResponse, db: Session = Depends(get_db)):
-    # Generate participant ID once at consent
-    pid = str(uuid.uuid4())
+    # Use participant_id provided by the user (i.e., Prolific ID)
+    pid = response.participant_id
+
     # Store initial record with consent flag
     participant = models.Participant(
         id=pid, python_yoe=None, skill_level=None, answers={}, consent=response.consent
