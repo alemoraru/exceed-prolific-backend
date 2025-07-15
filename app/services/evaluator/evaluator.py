@@ -10,15 +10,6 @@ from typing import Tuple
 from app.services.llm.intervention import get_rephrased_error_message
 
 
-def _load_module(path: str, module_name: str) -> ModuleType:
-    """Dynamically load a Python file as a module."""
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = mod
-    spec.loader.exec_module(mod)  # type: ignore
-    return mod
-
-
 def evaluate_code(
     code: str, snippet_id: str, intervention_type: str
 ) -> Tuple[str, str]:
@@ -64,7 +55,13 @@ def evaluate_code(
                 stderr=subprocess.STDOUT,
             )
         except subprocess.CalledProcessError as e:
-            return "syntax_error", e.output.decode()
+            orig_code, orig_error = _load_original_code_and_error(
+                code_dir, snippet_file
+            )
+            llm_msg = get_rephrased_error_message(
+                orig_code, orig_error, intervention_type
+            )
+            return "syntax_error", llm_msg
 
         # Run only the relevant test class in the relevant test file
         try:
@@ -81,12 +78,49 @@ def evaluate_code(
                 timeout=10,
             )
         except Exception as e:
-            llm_msg = get_rephrased_error_message(code, str(e), intervention_type)
+            orig_code, orig_error = _load_original_code_and_error(
+                code_dir, snippet_file
+            )
+            llm_msg = get_rephrased_error_message(
+                orig_code, orig_error, intervention_type
+            )
             return "runtime_error", llm_msg
         if result.returncode == 0:
             return "success", ""
         else:
+            orig_code, orig_error = _load_original_code_and_error(
+                code_dir, snippet_file
+            )
             llm_msg = get_rephrased_error_message(
-                code, result.stderr + "\n" + result.stdout, intervention_type
+                orig_code, orig_error, intervention_type
             )
             return "test_failure", llm_msg
+
+
+def _load_module(path: str, module_name: str) -> ModuleType:
+    """Dynamically load a Python file as a module."""
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = mod
+    spec.loader.exec_module(mod)  # type: ignore
+    return mod
+
+
+def _load_original_code_and_error(code_dir, snippet_file) -> Tuple[str, str]:
+    """
+    Load the original code and error message for a given snippet file.
+    :param code_dir: the directory containing the code snippets.
+    :param snippet_file: the relative path to the snippet file.
+    :return: Tuple containing the original code and error message.
+    """
+    orig_code_path = os.path.join(code_dir, snippet_file)
+    orig_error_path = os.path.join(
+        code_dir,
+        os.path.dirname(snippet_file),
+        f"{os.path.splitext(os.path.basename(snippet_file))[0]}_error.txt",
+    )
+    with open(orig_code_path, "r") as f:
+        orig_code = f.read()
+    with open(orig_error_path, "r") as f:
+        orig_error = f.read()
+    return orig_code, orig_error
