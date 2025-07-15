@@ -11,7 +11,7 @@ from app.services.llm.intervention import get_rephrased_error_message
 
 
 def evaluate_code(
-        code: str, snippet_id: str, intervention_type: str
+    code: str, snippet_id: str, intervention_type: str
 ) -> Tuple[str, str]:
     """
     1) Syntax‐check the code.
