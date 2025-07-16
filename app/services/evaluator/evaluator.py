@@ -1,24 +1,37 @@
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from types import ModuleType
-from typing import Tuple
+from typing import Optional, Tuple
 
 from app.services.llm.intervention import get_rephrased_error_message
 
 
 def evaluate_code(
     code: str, snippet_id: str, intervention_type: str
-) -> Tuple[str, str]:
+) -> Tuple[str, str, Optional[int], Optional[int]]:
     """
+    Evaluate user code against a predefined snippet and its test suite.
+    This function performs the following steps:
+
     1) Syntax‐check the code.
     2) Copy user code and test suite to temp dir.
     3) Run only the relevant unittest class for the snippet.
     4) If errors are encountered, rephrase the error message using an LLM.
-    5) Return ("success", "") or ("syntax_error"/"test_failure", details).
+    5) Return the evaluation status, rephrased error message, and test results.
+
+    :param code: The user code to evaluate.
+    :param snippet_id: The ID of the snippet to evaluate against.
+    :param intervention_type: The type of intervention to apply for error rephrasing.
+    :return: A tuple containing:
+        - status: "success", "syntax_error", "test_failure", or "runtime_error"
+        - rephrased error message (if applicable)
+        - number of tests passed (if applicable)
+        - total number of tests (if applicable)
     """
     snippet_map = {
         "0": ("snippetA/snippetA.py", "snippetA/test_snippetA.py", "TestSnippetA"),
@@ -27,7 +40,7 @@ def evaluate_code(
         "3": ("snippetD/snippetD.py", "snippetD/test_snippetD.py", "TestSnippetD"),
     }
     if snippet_id not in snippet_map:
-        return "no_tests", f"No test suite defined for {snippet_id}"
+        return "not_found", f"No test suite defined for {snippet_id}", None, None
     snippet_file, test_file, test_class = snippet_map[snippet_id]
     code_dir = os.path.join(os.path.dirname(__file__), "../../data/code")
 
@@ -61,7 +74,7 @@ def evaluate_code(
             llm_msg = get_rephrased_error_message(
                 orig_code, orig_error, intervention_type
             )
-            return "syntax_error", llm_msg
+            return "syntax_error", llm_msg, None, None
 
         # Run only the relevant test class in the relevant test file
         try:
@@ -71,30 +84,34 @@ def evaluate_code(
                     "-m",
                     "unittest",
                     f"{os.path.splitext(os.path.basename(test_file))[0]}.{test_class}",
+                    "-v",
                 ],
                 cwd=td,
                 capture_output=True,
                 text=True,
                 timeout=10,
             )
-        except Exception as e:
+        except Exception:
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
             llm_msg = get_rephrased_error_message(
                 orig_code, orig_error, intervention_type
             )
-            return "runtime_error", llm_msg
+            return "runtime_error", llm_msg, None, None
         if result.returncode == 0:
-            return "success", ""
+            # Parse output for test count
+            passed, total = _parse_unittest_output(result.stdout)
+            return "success", "", passed, total
         else:
+            passed, total = _parse_unittest_output(result.stdout)
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
             llm_msg = get_rephrased_error_message(
                 orig_code, orig_error, intervention_type
             )
-            return "test_failure", llm_msg
+            return "test_failure", llm_msg, passed, total
 
 
 def _load_module(path: str, module_name: str) -> ModuleType:
@@ -124,3 +141,30 @@ def _load_original_code_and_error(code_dir, snippet_file) -> Tuple[str, str]:
     with open(orig_error_path, "r") as f:
         orig_error = f.read()
     return orig_code, orig_error
+
+
+def _parse_unittest_output(output: str) -> Tuple[Optional[int], Optional[int]]:
+    """
+    Parse unittest output to extract number of passed and total tests.
+    :param output: The output string from unittest.
+    :return: A tuple containing the number of passed tests and total tests.
+    """
+
+    # Look for lines like: 'Ran 3 tests in 0.001s'
+    m = re.search(r"Ran (\d+) tests?", output)
+    total = int(m.group(1)) if m else None
+    # Look for 'OK' or 'FAILED (failures=1)' etc.
+    if "OK" in output:
+        passed = total
+    else:
+        # Try to count failures/errors
+        fail_match = re.search(r"FAILED \((.*?)\)", output)
+        failed = 0
+        if fail_match:
+            fail_str = fail_match.group(1)
+            # e.g. 'failures=1, errors=1'
+            for part in fail_str.split(","):
+                if "=" in part:
+                    failed += int(part.split("=")[1])
+        passed = total - failed if total is not None else None
+    return passed, total

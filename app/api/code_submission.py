@@ -23,49 +23,76 @@ def get_db():
 
 class CodeSubmission(BaseModel):
     """
-    Model for code submission containing participant ID, snippet ID, and code.
+    Model for code submission containing participant ID, snippet ID, code, and time taken in ms.
     """
 
     participant_id: str
     snippet_id: str
     code: str
+    time_taken_ms: int
 
 
 @router.post("/submit")
 async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db)):
     """
     Submit the user's code for compilation check and evaluation.
-    :param submission: CodeSubmission model containing participant_id, snippet_id, and code.
+    Records each attempt with attempt_number, error message shown, and evaluation status.
+    :param submission: CodeSubmission model containing participant ID, snippet ID, and code.
     :param db: Database session dependency.
-    :return: A dictionary with submission ID, status, and rephrased error message if any.
     """
     participant = db.query(models.Participant).get(submission.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
         raise HTTPException(status_code=403, detail="Consent is required to continue.")
-    sid = str(uuid.uuid4())
+    pid = submission.participant_id
+    snippet_id = submission.snippet_id
+
+    # Determine attempt_number (increment for each new attempt)
+    last_attempt = (
+        db.query(models.Submission)
+        .filter_by(participant_id=pid, snippet_id=snippet_id)
+        .order_by(models.Submission.attempt_number.desc())
+        .first()
+    )
+    attempt_number = 1 if not last_attempt else last_attempt.attempt_number + 1
+
+    # Evaluate code (syntax + tests)
+    status, llm_error_msg, tests_passed, tests_total = evaluate_code(
+        submission.code, snippet_id, InterventionType.CONTINGENT.value
+    )
+
+    # Store the error message that was displayed to the user
+    # in the database for analysis later
+    if attempt_number == 1:
+        # Always use static error for first attempt
+        snippet = get_snippet(snippet_id)
+        error_msg_displayed = snippet["error"] if snippet else ""
+    else:
+        # Use LLM error for follow-up attempts
+        error_msg_displayed = llm_error_msg
+
+    # Record the submission attempt
     sub = models.Submission(
-        id=sid,
-        participant_id=submission.participant_id,
-        snippet_id=submission.snippet_id,
+        participant_id=pid,
+        snippet_id=snippet_id,
+        attempt_number=attempt_number,
         code=submission.code,
-        status="pending",
-        error_msg=None,
+        error_msg_displayed=error_msg_displayed,
+        status=status,
+        tests_passed=tests_passed,
+        tests_total=tests_total,
+        time_taken_ms=submission.time_taken_ms,
     )
     db.add(sub)
     db.commit()
 
-    # Evaluate code (syntax + tests)
-    status, error = evaluate_code(
-        submission.code, submission.snippet_id, InterventionType.CONTINGENT.value
-    )
-
-    sub.status = status
-    sub.error_msg = error
-    db.commit()
-
-    return {"submission_id": sid, "status": status, "error_msg": error}
+    return {
+        "participant_id": pid,
+        "snippet_id": snippet_id,
+        "status": status,
+        "error_msg": llm_error_msg,
+    }
 
 
 @router.get("/snippet/{snippet_id}")

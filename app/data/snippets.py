@@ -17,6 +17,7 @@ def read_snippet(filename: Tuple[str, str]) -> str:
 
 
 def read_error(snippet_key: str) -> str:
+    """Read the error message from a file for a given snippet."""
     code_file, error_file = SNIPPET_FILES[snippet_key]
     error_path = os.path.join(os.path.dirname(__file__), "code", error_file)
     with open(error_path, "r") as f:

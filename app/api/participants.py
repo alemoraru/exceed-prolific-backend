@@ -56,7 +56,11 @@ async def submit_consent(response: ConsentResponse, db: Session = Depends(get_db
 
     # Store initial record with consent flag
     participant = models.Participant(
-        id=pid, python_yoe=None, skill_level=None, answers={}, consent=response.consent
+        participant_id=pid,
+        python_yoe=None,
+        skill_level=None,
+        answers={},
+        consent=response.consent,
     )
     db.add(participant)
     db.commit()
@@ -175,6 +179,7 @@ async def submit_question(response: QuestionResponse, db: Session = Depends(get_
         if correct_count <= 3 and yoe >= 5:
             skill_level = "novice"
         participant.skill_level = skill_level
+        participant.correct_mcq_count = correct_count
         db.commit()
 
     return {
