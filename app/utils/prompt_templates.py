@@ -18,18 +18,18 @@ ERROR MESSAGE:
 ---
 TASK:
 
-Extract the exception type and line number from ERROR.
-Write exactly one sentence (around 25-30 words or less) that:
-- Begins with "<ExceptionType> at line <line>:"
-- Briefly states the cause and hints at a fix.
-- Uses plain language—no jargon.
-- Does NOT include the corrected code.
+1. Extract the exception type and line number from ERROR.
+2. Write exactly one paragraph (around 25-30 words or less) that:
+    - Begins with "**<ExceptionType>** at **line <line>**:"
+    - Briefly states the cause and hints at a fix.
+    - Uses plain language—no jargon.
+    - Focuses on providing helpful hints or suggestions, without directly giving the corrected code.
 
 FORMAT:
-Output must be plain text only—no markdown, code fences, or lists.
+You may use markdown for emphasis, but do NOT include lists or code fences.
 
 ---
-EXAMPLE:
+EXAMPLE 1:
 
 CODE:
 ```python
@@ -43,9 +43,39 @@ ERROR MESSAGE:
 TypeError: can only concatenate str (not "int") to str on line 3
 ```
 
-DESIRED OUTPUT:
+OUTPUT:
 ```
-TypeError at line 3: Did you mean to convert the integer to a string before concatenation? The error occurs because you cannot add a string and an integer directly in Python.
+**TypeError** at **line 3**: You tried to concatenate a string and an integer, which is not allowed in Python.
+Consider bringing both variables to the same type before performing operations on them.
+```
+---
+
+EXAMPLE 2:
+
+CODE:
+```python
+def last_element(lst):
+    return lst[len(lst)]
+result = last_element([1, 2, 3])
+```
+
+ERROR MESSAGE:
+```
+Traceback (most recent call last):
+  File "main.py", line 3, in <module>
+    result = last_element([1, 2, 3])
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "main.py", line 2, in last_element
+    return lst[len(lst)]
+           ~~~^^^^^^^^^^
+IndexError: list index out of range
+```
+
+OUTPUT:
+```
+**IndexError** at **line 2**: 
+You tried to access an index that is out of range for the list. To address this, remember that list indices start at 0
+in Python, so the last element of any list is at index `len(lst) - 1`.
 ```
 ---
 
@@ -54,10 +84,10 @@ NOW WRITE YOUR RESPONSE:
 }
 
 CONTINGENT_PROMPT = {
-    "system_prompt": "You are an educational assistant guiding a Python programmer through an error with a step-by-step explanation.",
+    "system_prompt": "You are an educational assistant guiding a Python programmer to successfully resolve their error with clear, supportive, and actionable steps.",
     "template": """
 INSTRUCTION:
-You will guide a Python programmer through their Python error in 3–5 supportive sentences.
+Guide the Python programmer to resolve their error in 3–5 supportive sentences. Focus on actionable steps and encouragement.
 
 CONTEXT:
 The programmer's code and error message are below:
@@ -73,35 +103,70 @@ ERROR MESSAGE:
 ---
 TASK:
 1. Extract the exception type and line number from ERROR.
-2. Begin your response with "<ExceptionType> at line <line>:" on the first line.
+2. Begin your response with "**<ExceptionType>** at **line <line>**:" on the first line.
 3. Then write 3–5 sentences that:
-    * Begin by confirming the likely intent or goal (e.g. "Did you mean to ...?") – this is the claim, showing you understand what they wanted.
-    * Explain plainly why the error occurred, avoiding jargon and keeping it simple.
-    * Optionally provide a brief example or insight.
-    * End with a hint or question that guides them toward the fix (without giving the exact code). For example, ask if they considered a certain approach, or suggest a function to use, without outright providing the solution code.
+    - Begin by confirming the likely intent or goal (e.g. "Did you mean to ...?") – this is the claim, showing you understand what they wanted.
+    - Explain plainly why the error occurred, avoiding jargon and keeping it simple.
+    - Optionally provide a brief example or insight.
+    - End with a hint or question that guides them toward the fix (without giving the exact code). For example, ask if they considered a certain approach, or suggest a function to use, without outright providing the solution code.
 
 FORMAT:
-Output must be plain text only—no markdown, code fences, or lists.
+You may use markdown for emphasis, but do not include lists or code fences.
 
 ---
-EXAMPLE:
+EXAMPLE 1:
 
 CODE:
 ```python
-my_list = [1, 2, 3]
-result = my_list + 4
-```
-ERROR MESSAGE:
-```
-TypeError: can only concatenate list (not \"int\") to list on line 2
+x = "hi"
+y = 1
+print(x + y)
 ```
 
-DESIRED OUTPUT:
+ERROR MESSAGE:
 ```
-TypeError at line 2: Did you mean to add a single item to your list? 
-The error occurred because you tried to join an integer to a list directly. 
-In Python, you can only concatenate lists or use list methods for items. 
-Try using append instead of the '+' operator.
+Traceback (most recent call last):
+  File "main.py", line 3, in <module>
+    print(x + y)
+          ~~^~~
+TypeError: can only concatenate str (not "int") to str
+```
+
+OUTPUT:
+```
+**TypeError** at **line 2**: Did you mean to convert the integer to a string before concatenation? 
+The error occurs because you cannot add a string and an integer directly in Python. 
+Consider using the same type for both variables, such as converting `y` to a string, before performing operations on them.
+```
+---
+
+EXAMPLE 2:
+
+CODE:
+```python
+def last_element(lst):
+    return lst[len(lst)]
+result = last_element([1, 2, 3])
+```
+
+ERROR MESSAGE:
+```
+Traceback (most recent call last):
+  File "main.py", line 3, in <module>
+    result = last_element([1, 2, 3])
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "main.py", line 2, in last_element
+    return lst[len(lst)]
+           ~~~^^^^^^^^^^
+IndexError: list index out of range
+```
+
+OUTPUT:
+```
+**IndexError** at **line 2**: Did you mean to access the last element of the list?
+The error occurred because you tried to access an index that is out of range for the list.
+In Python, list indices start at 0, so the last element is at index `len(lst) - 1`.
+Consider changing the value you use to access the actual, existing last element of the list, to avoid this error.
 ```
 ---
 
