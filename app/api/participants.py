@@ -49,6 +49,15 @@ class QuestionResponse(BaseModel):
     time_taken_ms: int
 
 
+class RevokeConsentRequest(BaseModel):
+    participant_id: str
+
+
+class RevokeConsentResult(BaseModel):
+    participant_id: str
+    consent: bool
+
+
 @router.post("/consent", response_model=ConsentResult)
 async def submit_consent(response: ConsentResponse, db: Session = Depends(get_db)):
     # Use participant_id provided by the user (i.e., Prolific ID)
@@ -65,6 +74,16 @@ async def submit_consent(response: ConsentResponse, db: Session = Depends(get_db
     db.add(participant)
     db.commit()
     return {"participant_id": pid, "consent": response.consent}
+
+
+@router.post("/revoke-consent", response_model=RevokeConsentResult)
+async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(get_db)):
+    participant = db.query(models.Participant).get(request.participant_id)
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found")
+    participant.consent = False
+    db.commit()
+    return {"participant_id": request.participant_id, "consent": False}
 
 
 @router.post("/experience")
