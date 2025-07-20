@@ -50,12 +50,36 @@ class QuestionResponse(BaseModel):
 
 
 class RevokeConsentRequest(BaseModel):
+    """Model for request to revoke consent."""
+
     participant_id: str
 
 
 class RevokeConsentResult(BaseModel):
+    """Model for the result of consent revocation."""
+
     participant_id: str
     consent: bool
+
+
+class ParticipantExistsRequest(BaseModel):
+    """Model for checking if a participant exists."""
+
+    participant_id: str
+
+
+class ParticipantExistsResponse(BaseModel):
+    """Model for the response of participant existence check."""
+
+    exists: bool
+
+
+@router.post("/participant-exists", response_model=ParticipantExistsResponse)
+async def participant_exists(
+    request: ParticipantExistsRequest, db: Session = Depends(get_db)
+):
+    exists = db.query(models.Participant).get(request.participant_id) is not None
+    return {"exists": exists}
 
 
 @router.post("/consent", response_model=ConsentResult)

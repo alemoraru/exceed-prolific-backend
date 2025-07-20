@@ -22,7 +22,6 @@ TASK:
 2. Write exactly one paragraph (around 25-30 words or less) that:
     - Begins with "**<ExceptionType>** at **line <line>**:"
     - Briefly states the cause and hints at a fix.
-    - Uses plain language—no jargon.
     - Focuses on providing helpful hints or suggestions, without directly giving the corrected code.
 
 FORMAT:
@@ -111,7 +110,7 @@ TASK:
     - End with a hint or question that guides them toward the fix (without giving the exact code). For example, ask if they considered a certain approach, or suggest a function to use, without outright providing the solution code.
 
 FORMAT:
-You may use markdown for emphasis, but do not include lists or code fences.
+You may use markdown for emphasis, but do NOT include lists or code fences.
 
 ---
 EXAMPLE 1:
