@@ -76,7 +76,7 @@ class ParticipantExistsResponse(BaseModel):
 
 @router.post("/participant-exists", response_model=ParticipantExistsResponse)
 async def participant_exists(
-        request: ParticipantExistsRequest, db: Session = Depends(get_db)
+    request: ParticipantExistsRequest, db: Session = Depends(get_db)
 ):
     exists = db.query(models.Participant).get(request.participant_id) is not None
     return {"exists": exists}
@@ -112,7 +112,7 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
 
 @router.post("/experience")
 async def submit_experience(
-        response: ExperienceResponse, db: Session = Depends(get_db)
+    response: ExperienceResponse, db: Session = Depends(get_db)
 ):
     # Must include existing participant_id
     participant = db.query(models.Participant).get(response.participant_id)
@@ -145,9 +145,9 @@ async def get_questions(participant_id: str, db: Session = Depends(get_db)):
 
     # Only randomize and store in DB if not already present
     if (
-            not participant.mcq_answer_map
-            or not hasattr(participant, "mcq_questions")
-            or participant.mcq_questions is None
+        not participant.mcq_answer_map
+        or not hasattr(participant, "mcq_questions")
+        or participant.mcq_questions is None
     ):
         questions, answer_map = get_randomized_questions_for_participant()
         participant.mcq_answer_map = answer_map
@@ -168,8 +168,8 @@ async def submit_question(response: QuestionResponse, db: Session = Depends(get_
             detail="Consent is required to continue.",
         )
     if (
-            not participant.mcq_answer_map
-            or response.question_id not in participant.mcq_answer_map
+        not participant.mcq_answer_map
+        or response.question_id not in participant.mcq_answer_map
     ):
         raise HTTPException(
             status_code=400,
