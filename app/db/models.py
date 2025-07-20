@@ -33,3 +33,15 @@ class Submission(Base):
     tests_passed = Column(Integer, nullable=True)
     tests_total = Column(Integer, nullable=True)
     time_taken_ms = Column(Integer, nullable=True)
+
+
+class Event(Base):
+    """Model representing a participant event (e.g., window/tab switch, copy-paste)."""
+
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    participant_id = Column(String, index=True, nullable=False)
+    event_type = Column(String, nullable=False)
+    timestamp = Column(
+        String, nullable=False
+    )  # ms since epoch, sent from frontend as a string

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import code_submission, participants
+from app.api import code_submission, events, participants
 from app.core.config import FRONTEND_URL
 from app.db.base import Base
 from app.db.session import engine
@@ -15,10 +15,12 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
 
 
+# Define API routers
 app.include_router(
     participants.router, prefix="/api/participants", tags=["participants"]
 )
 app.include_router(code_submission.router, prefix="/api/code", tags=["code_submission"])
+app.include_router(events.router, prefix="/api/events", tags=["events"])
 
 # Configure CORS
 origins = [FRONTEND_URL]
