@@ -58,8 +58,12 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     attempt_number = 1 if not last_attempt else last_attempt.attempt_number + 1
 
     # Evaluate code (syntax + tests)
+    if not participant.intervention_type:
+        raise HTTPException(
+            status_code=400, detail="Intervention type not assigned for participant."
+        )
     status, llm_error_msg, tests_passed, tests_total = evaluate_code(
-        submission.code, snippet_id, InterventionType.CONTINGENT.value
+        submission.code, snippet_id, participant.intervention_type
     )
 
     # Store the error message that was displayed to the user
@@ -103,7 +107,7 @@ def get_code_snippet(
     Retrieve the code snippet for a given snippet ID and participant ID.
     :param snippet_id: The ID of the code snippet to retrieve.
     :param participant_id: The ID of the participant requesting the snippet.
-    :param db:  Database session dependency.
+    :param db: Database session dependency.
     :return: A dictionary containing the snippet ID, code, and respective standard error message.
     """
     participant = db.query(models.Participant).get(participant_id)

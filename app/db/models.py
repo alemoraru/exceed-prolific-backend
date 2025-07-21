@@ -11,6 +11,7 @@ class Participant(Base):
     participant_id = Column(String, primary_key=True, index=True)
     consent = Column(Boolean, nullable=False)
     skill_level = Column(String, index=True, nullable=True)
+    intervention_type = Column(String, nullable=True, index=True)
     python_yoe = Column(Integer, nullable=True)
     answers = Column(JSON, nullable=True)
     mcq_questions = Column(JSON, nullable=True)
@@ -42,6 +43,4 @@ class Event(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     participant_id = Column(String, index=True, nullable=False)
     event_type = Column(String, nullable=False)
-    timestamp = Column(
-        String, nullable=False
-    )  # ms since epoch, sent from frontend as a string
+    timestamp = Column(String, nullable=False)
