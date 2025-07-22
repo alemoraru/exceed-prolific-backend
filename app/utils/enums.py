@@ -1,6 +1,13 @@
 from enum import Enum
 
 
+class SkillLevel(Enum):
+    """Enum for participant skill levels."""
+
+    NOVICE = "novice"
+    EXPERT = "expert"
+
+
 class InterventionType(Enum):
     """Enum for intervention types."""
 

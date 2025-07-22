@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.data.questions import get_randomized_questions_for_participant
 from app.db import models
 from app.db.session import SessionLocal
-from app.utils.enums import InterventionType
+from app.utils.enums import InterventionType, SkillLevel
 
 router = APIRouter()
 
@@ -248,64 +248,83 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     # If 8 questions have been answered, that means all questions have been answered,
     # and we can proceed with skill level and intervention type assignment
     if len(updated) == 8:
-
-        # --- Skill Level assignment logic ---
-        correct_count = sum(
-            1
-            for qid, ans in updated.items()
-            if participant.mcq_answer_map.get(qid) is not None
-            and ans["answer"] == participant.mcq_answer_map[qid]
-        )
-        yoe = participant.python_yoe or 0
-        skill_level = None
-        if correct_count >= 6:
-            skill_level = "expert"
-        elif correct_count <= 3:
-            skill_level = "novice"
-        else:  # 4-5 correct
-            skill_level = "expert" if yoe >= 5 else "novice"
-        # Override for edge cases
-        if correct_count >= 6 and yoe < 5:
-            skill_level = "expert"
-        if correct_count <= 3 and yoe >= 5:
-            skill_level = "novice"
-        participant.skill_level = skill_level
-        participant.correct_mcq_count = correct_count
-
-        # --- InterventionType assignment logic ---
-
-        # Query all participants with the same skill level and assigned intervention_type
-        skill_participants = (
-            db.query(models.Participant)
-            .filter(
-                models.Participant.skill_level == skill_level,
-                models.Participant.intervention_type != None,
-            )
-            .all()
-        )
-        contingent_count = sum(
-            1
-            for p in skill_participants
-            if p.intervention_type == InterventionType.CONTINGENT.value
-        )
-        pragmatic_count = sum(
-            1
-            for p in skill_participants
-            if p.intervention_type == InterventionType.PRAGMATIC.value
-        )
-        # Decide assignment to balance
-        if contingent_count < pragmatic_count:
-            assigned_type = InterventionType.CONTINGENT.value
-        elif pragmatic_count < contingent_count:
-            assigned_type = InterventionType.PRAGMATIC.value
-        else:
-            assigned_type = random.choice(
-                [InterventionType.CONTINGENT.value, InterventionType.PRAGMATIC.value]
-            )
-        participant.intervention_type = assigned_type
-        db.commit()
+        assign_skill_and_intervention(participant, db)
 
     return {
         "participant_id": request.participant_id,
         "question_id": request.question_id,
     }
+
+
+def assess_skill_level(correct_count: int, python_yoe: int) -> str:
+    """
+    Assess the skill level ("novice" or "expert") based on correct MCQ count and years of experience.
+    :param correct_count: Number of correct answers given by the participant.
+    :param python_yoe: Years of experience in Python programming, provided by the participant.
+    """
+    if correct_count >= 6:
+        return SkillLevel.EXPERT.value
+    elif correct_count <= 3:
+        return SkillLevel.NOVICE.value
+    else:  # 4-5 correct
+        return SkillLevel.EXPERT.value if python_yoe >= 5 else SkillLevel.NOVICE.value
+
+
+def assign_intervention_type(contingent_count: int, pragmatic_count: int) -> str:
+    """
+    Assign intervention type to balance the groups, breaking ties randomly.
+    :param contingent_count: Number of participants who were assigned the CONTINGENT intervention.
+    :param pragmatic_count: Number of participants who were assigned the PRAGMATIC intervention.
+    :return: Assigned intervention type as a string.
+    """
+    if contingent_count < pragmatic_count:
+        return InterventionType.CONTINGENT.value
+    elif pragmatic_count < contingent_count:
+        return InterventionType.PRAGMATIC.value
+    else:
+        return random.choice(
+            [InterventionType.CONTINGENT.value, InterventionType.PRAGMATIC.value]
+        )
+
+
+def assign_skill_and_intervention(participant, db) -> None:
+    """
+    Assigns skill level and intervention type to a participant based on their MCQ answers and experience.
+    Updates the participant object and commits to the database.
+    :param participant: Participant model instance.
+    :param db: Database session.
+    """
+    updated = participant.answers or {}
+    correct_count = sum(
+        1
+        for qid, ans in updated.items()
+        if participant.mcq_answer_map.get(qid) is not None
+        and ans["answer"] == participant.mcq_answer_map[qid]
+    )
+    yoe = participant.python_yoe or 0
+    skill_level = assess_skill_level(correct_count, yoe)
+    participant.skill_level = skill_level
+    participant.correct_mcq_count = correct_count
+
+    # --- InterventionType assignment logic ---
+    skill_participants = (
+        db.query(models.Participant)
+        .filter(
+            models.Participant.skill_level == skill_level,
+            models.Participant.intervention_type != None,
+        )
+        .all()
+    )
+    contingent_count = sum(
+        1
+        for p in skill_participants
+        if p.intervention_type == InterventionType.CONTINGENT.value
+    )
+    pragmatic_count = sum(
+        1
+        for p in skill_participants
+        if p.intervention_type == InterventionType.PRAGMATIC.value
+    )
+    assigned_type = assign_intervention_type(contingent_count, pragmatic_count)
+    participant.intervention_type = assigned_type
+    db.commit()

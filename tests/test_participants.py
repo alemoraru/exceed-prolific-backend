@@ -263,6 +263,46 @@ class TestParticipants:
             == "MCQ answer map not found or question not served to participant"
         )
 
+    def test_submit_question_answer_without_consent(self, client):
+        """Test submitting a question without giving consent first."""
+
+        # Register and set up participant
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "revoke_consent_after", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "revoke_consent_after", "python_yoe": 1},
+        )
+        questions = client.get(
+            "/api/participants/questions",
+            params={"participant_id": "revoke_consent_after"},
+        ).json()
+        qid = (
+            questions[0]["id"] if "id" in questions[0] else list(questions[0].keys())[0]
+        )
+
+        # Revoke consent before submitting an answer to a question
+        client.post(
+            "/api/participants/revoke-consent",
+            json={"participant_id": "revoke_consent_after"},
+        )
+
+        # Submit answer
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "revoke_consent_after",
+                "question_id": qid,
+                "answer": "0",
+                "time_taken_ms": 1000,
+            },
+        )
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Consent is required to continue."
+
     def test_submit_question_already_answered(self, client):
         """Test submitting a question that has already been answered."""
 
