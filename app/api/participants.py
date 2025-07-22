@@ -229,6 +229,8 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     try:
         submitted_index = int(request.answer)
     except Exception:
+        # This case won't actually be reached, because the API will validate the type
+        # and raise a 422 Unprocessable Entity error if the answer is not an integer.
         raise HTTPException(
             status_code=400,
             detail="Answer must be an integer index of the selected option",
