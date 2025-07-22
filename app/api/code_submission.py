@@ -40,11 +40,17 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     :param submission: CodeSubmission model containing participant ID, snippet ID, and code.
     :param db: Database session dependency.
     """
-    participant = db.query(models.Participant).get(submission.participant_id)
+    participant = db.get(models.Participant, submission.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
         raise HTTPException(status_code=403, detail="Consent is required to continue.")
+    if not participant.intervention_type:
+        raise HTTPException(
+            status_code=400, detail="Intervention type not assigned for participant."
+        )
+
+    # Get PID and snippet ID from submission as they are required for evaluation
     pid = submission.participant_id
     snippet_id = submission.snippet_id
 
@@ -59,7 +65,7 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
 
     # Evaluate code (syntax + tests)
     status, llm_error_msg, tests_passed, tests_total = evaluate_code(
-        submission.code, snippet_id, InterventionType.CONTINGENT.value
+        submission.code, snippet_id, participant.intervention_type
     )
 
     # Store the error message that was displayed to the user
@@ -103,10 +109,10 @@ def get_code_snippet(
     Retrieve the code snippet for a given snippet ID and participant ID.
     :param snippet_id: The ID of the code snippet to retrieve.
     :param participant_id: The ID of the participant requesting the snippet.
-    :param db:  Database session dependency.
+    :param db: Database session dependency.
     :return: A dictionary containing the snippet ID, code, and respective standard error message.
     """
-    participant = db.query(models.Participant).get(participant_id)
+    participant = db.get(models.Participant, participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:

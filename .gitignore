@@ -2,3 +2,5 @@ venv
 .venv
 __pycache__
 .env_local
+**/test_api.db
+.coverage

@@ -8,3 +8,6 @@
 .idea
 pyproject.toml
 README.md
+tests
+docker-compose.yml
+LICENSE

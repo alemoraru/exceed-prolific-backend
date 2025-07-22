@@ -33,3 +33,8 @@ jobs:
       - name: Check isort
         run: |
           isort --check-only .
+
+      - name: Run tests with pytest
+        run: |
+          pip install pytest pytest-cov
+          PYTHONPATH=. pytest --cov=app --cov=tests --cov-report=term-missing tests/
