@@ -125,6 +125,14 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
     participant = db.query(models.Participant).get(request.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
+
+    # Check if consent is already revoked / declined
+    if not participant.consent:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Consent has already been revoked or declined.",
+        )
+
     participant.consent = False
     db.commit()
     return {"participant_id": request.participant_id, "consent": False}

@@ -14,6 +14,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
 
+
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -21,9 +22,11 @@ def override_get_db():
     finally:
         db.close()
 
+
 # Override get_db for all routers that use it
 app.dependency_overrides[participants.get_db] = override_get_db
 app.dependency_overrides[code_submission.get_db] = override_get_db
+
 
 @pytest.fixture(scope="function")
 def client():
