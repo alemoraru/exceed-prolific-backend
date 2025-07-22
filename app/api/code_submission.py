@@ -45,6 +45,12 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
         raise HTTPException(status_code=403, detail="Consent is required to continue.")
+    if not participant.intervention_type:
+        raise HTTPException(
+            status_code=400, detail="Intervention type not assigned for participant."
+        )
+
+    # Get PID and snippet ID from submission as they are required for evaluation
     pid = submission.participant_id
     snippet_id = submission.snippet_id
 
@@ -58,10 +64,6 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     attempt_number = 1 if not last_attempt else last_attempt.attempt_number + 1
 
     # Evaluate code (syntax + tests)
-    if not participant.intervention_type:
-        raise HTTPException(
-            status_code=400, detail="Intervention type not assigned for participant."
-        )
     status, llm_error_msg, tests_passed, tests_total = evaluate_code(
         submission.code, snippet_id, participant.intervention_type
     )
