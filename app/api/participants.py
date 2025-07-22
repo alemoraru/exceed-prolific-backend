@@ -85,7 +85,7 @@ async def participant_exists(
     :param db: Database session dependency.
     :return: ParticipantExistsResponse model indicating whether the participant exists.
     """
-    exists = db.query(models.Participant).get(request.participant_id) is not None
+    exists = db.get(models.Participant, request.participant_id) is not None
     return {"exists": exists}
 
 
@@ -122,7 +122,7 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
     :param db: Database session dependency.
     :return: RevokeConsentResult model containing participant ID and updated consent flag.
     """
-    participant = db.query(models.Participant).get(request.participant_id)
+    participant = db.get(models.Participant, request.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
 
@@ -149,7 +149,7 @@ async def submit_experience(request: ExperienceRequest, db: Session = Depends(ge
     """
 
     # Must include existing participant_id
-    participant = db.query(models.Participant).get(request.participant_id)
+    participant = db.get(models.Participant, request.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
@@ -171,7 +171,7 @@ async def get_questions(participant_id: str, db: Session = Depends(get_db)):
     :param db: Database session dependency.
     :return: List of multiple-choice questions for the participant.
     """
-    participant = db.query(models.Participant).get(participant_id)
+    participant = db.get(models.Participant, participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
@@ -204,7 +204,7 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     :param db: Database session dependency.
     :return:
     """
-    participant = db.query(models.Participant).get(request.participant_id)
+    participant = db.get(models.Participant, request.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:

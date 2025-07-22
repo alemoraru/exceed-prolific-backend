@@ -33,7 +33,7 @@ async def log_event(request: EventRequest, db: Session = Depends(get_db)):
     :return: None
     """
 
-    participant = db.query(models.Participant).get(request.participant_id)
+    participant = db.get(models.Participant, request.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:

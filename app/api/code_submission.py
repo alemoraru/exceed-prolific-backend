@@ -40,7 +40,7 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     :param submission: CodeSubmission model containing participant ID, snippet ID, and code.
     :param db: Database session dependency.
     """
-    participant = db.query(models.Participant).get(submission.participant_id)
+    participant = db.get(models.Participant, submission.participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
@@ -112,7 +112,7 @@ def get_code_snippet(
     :param db: Database session dependency.
     :return: A dictionary containing the snippet ID, code, and respective standard error message.
     """
-    participant = db.query(models.Participant).get(participant_id)
+    participant = db.get(models.Participant, participant_id)
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     if not participant.consent:
