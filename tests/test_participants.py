@@ -305,3 +305,35 @@ class TestParticipants:
         )
         assert response.status_code == 400
         assert response.json()["detail"] == "Question already answered"
+
+    def test_answer_all_questions(self, client):
+        """Test answering all questions for a participant."""
+
+        # Register and set up participant
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "all_questions", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "all_questions", "python_yoe": 1},
+        )
+        questions = client.get(
+            "/api/participants/questions", params={"participant_id": "all_questions"}
+        ).json()
+
+        # Answer all questions
+        for question in questions:
+            qid = question["id"] if "id" in question else list(question.keys())[0]
+            response = client.post(
+                "/api/participants/question",
+                json={
+                    "participant_id": "all_questions",
+                    "question_id": qid,
+                    "answer": "0",  # Random value, we don't care about correctness here
+                    "time_taken_ms": 1000,
+                },
+            )
+            assert response.status_code == 200
+            assert response.json()["participant_id"] == "all_questions"
+            assert response.json()["question_id"] == qid
