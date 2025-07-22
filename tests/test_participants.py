@@ -133,3 +133,131 @@ class TestParticipants:
         )
         assert response.status_code == 403
         assert response.json() == {"detail": "Consent is required to continue."}
+
+    def test_get_questions_requires_consent(self, client):
+        """Register participant without consent and try to get questions."""
+
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "no_consent", "consent": False},
+        )
+        response = client.get(
+            "/api/participants/questions", params={"participant_id": "no_consent"}
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Consent is required to continue."
+
+    def test_get_questions_participant_not_found(self, client):
+        """Test getting questions for a non-existent participant."""
+
+        response = client.get(
+            "/api/participants/questions", params={"participant_id": "notfound"}
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Participant not found"
+
+    def test_submit_question_participant_not_found(self, client):
+        """Test answering a question for a non-existent participant."""
+
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "non_existing_participant",
+                "question_id": "0",
+                "answer": "0",
+                "time_taken_ms": 1000,
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Participant not found"
+
+    def test_submit_question_invalid_answer_type(self, client):
+        """Test submitting a question with an invalid answer type."""
+
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "invalid_answer", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "invalid_answer", "python_yoe": 1},
+        )
+        questions = client.get(
+            "/api/participants/questions", params={"participant_id": "invalid_answer"}
+        ).json()
+
+        # Get question ID
+        qid = (
+            questions[0]["id"] if "id" in questions[0] else list(questions[0].keys())[0]
+        )
+
+        # Submit invalid answer (integer instead of string of an int)
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "invalid_answer",
+                "question_id": qid,
+                "answer": 0,  # should be a string like "0"
+                "time_taken_ms": 1000,
+            },
+        )
+        assert response.status_code == 422
+
+    def test_submit_question_correct(self, client):
+        """Test submitting a question with a valid answer (Good weather case)."""
+
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "id_test", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "id_test", "python_yoe": 1},
+        )
+        questions = client.get(
+            "/api/participants/questions", params={"participant_id": "id_test"}
+        ).json()
+        qid = (
+            questions[0]["id"] if "id" in questions[0] else list(questions[0].keys())[0]
+        )
+        # Submit answer
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "id_test",
+                "question_id": qid,
+                "answer": "0",
+                "time_taken_ms": 1000,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["participant_id"] == "id_test"
+        assert response.json()["question_id"] == qid
+
+    def test_submit_question_invalid_question_id(self, client):
+        # Register and set up participant
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "invalid_qid", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "invalid_qid", "python_yoe": 1},
+        )
+        # Try to submit to a question ID that doesn't exist
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "invalid_qid",
+                "question_id": "not_a_real_qid",  # Invalid question ID
+                "answer": "0",
+                "time_taken_ms": 1000,
+            },
+        )
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "MCQ answer map not found or question not served to participant"
+        )

@@ -1,10 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, clear_mappers
-from app.main import app
+from sqlalchemy.orm import clear_mappers, sessionmaker
+
+from app.api import code_submission, participants
 from app.db.base import Base
-from app.api import participants, code_submission
+from app.main import app
 
 # Use a file-based SQLite DB for thread safety in FastAPI tests
 TEST_DB_URL = "sqlite:///./test_api.db"
