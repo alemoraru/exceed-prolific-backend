@@ -236,8 +236,9 @@ class TestParticipants:
         assert response.json()["participant_id"] == "id_test"
         assert response.json()["question_id"] == qid
 
-    def test_submit_question_invalid_question_id(self, client):
-        # Register and set up participant
+    def test_submit_question_non_existing_question_id(self, client):
+        """Test submitting a question with a question ID that doesn't exist."""
+
         client.post(
             "/api/participants/consent",
             json={"participant_id": "invalid_qid", "consent": True},
@@ -251,7 +252,7 @@ class TestParticipants:
             "/api/participants/question",
             json={
                 "participant_id": "invalid_qid",
-                "question_id": "not_a_real_qid",  # Invalid question ID
+                "question_id": "not_a_real_qid",  # Valid ID according to the schema, but non-existing
                 "answer": "0",
                 "time_taken_ms": 1000,
             },
@@ -261,3 +262,46 @@ class TestParticipants:
             response.json()["detail"]
             == "MCQ answer map not found or question not served to participant"
         )
+
+    def test_submit_question_already_answered(self, client):
+        """Test submitting a question that has already been answered."""
+
+        # Register and set up participant
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "already_answered", "consent": True},
+        )
+        client.post(
+            "/api/participants/experience",
+            json={"participant_id": "already_answered", "python_yoe": 1},
+        )
+        questions = client.get(
+            "/api/participants/questions", params={"participant_id": "already_answered"}
+        ).json()
+        qid = (
+            questions[0]["id"] if "id" in questions[0] else list(questions[0].keys())[0]
+        )
+
+        # Submit answer
+        client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "already_answered",
+                "question_id": qid,
+                "answer": "0",
+                "time_taken_ms": 1000,
+            },
+        )
+
+        # Try to submit the same question again
+        response = client.post(
+            "/api/participants/question",
+            json={
+                "participant_id": "already_answered",
+                "question_id": qid,
+                "answer": "1",  # Different answer
+                "time_taken_ms": 1000,
+            },
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Question already answered"
