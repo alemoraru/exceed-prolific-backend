@@ -62,7 +62,7 @@ async def submit_feedback(
             detail="Feedback ratings must be integers between 1 and 5",
         )
 
-    # Optionally, check that the submission exists
+    # Check that a submission exists for this participant, snippet, and attempt number
     submission = (
         db.query(models.CodeSubmission)
         .filter_by(
