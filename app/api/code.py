@@ -4,18 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.data.snippets import get_snippet
 from app.db import models
-from app.db.session import SessionLocal
+from app.db.session import get_db
 from app.services.evaluator.evaluator import evaluate_code
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 class CodeSubmission(BaseModel):
