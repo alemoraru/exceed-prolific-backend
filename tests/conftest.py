@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import clear_mappers, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
-from app.api import code, events, participants
+from app.api import code, events, feedback, participants
 from app.db.base import Base
 from app.main import app
 
@@ -26,8 +26,9 @@ def override_get_db():
 
 # Override get_db for all routers that use it
 app.dependency_overrides[participants.get_db] = override_get_db
-app.dependency_overrides[code_submission.get_db] = override_get_db
+app.dependency_overrides[code.get_db] = override_get_db
 app.dependency_overrides[events.get_db] = override_get_db
+app.dependency_overrides[feedback.get_db] = override_get_db
 
 
 @pytest.fixture(scope="function")
