@@ -2,8 +2,8 @@
 
 This repository contains the backend code for the EXCEED Prolific application, a study aimed at investigating code
 understanding and error correction using Python code snippets and (automatically rephrased) error messages. The backend
-is built with FastAPI and SQLAlchemy, and provides RESTful APIs for participant management, code submission, and error
-intervention.
+is built with FastAPI and SQLAlchemy, and provides RESTful APIs for participant management, code fix submissions, error
+message feedback, and event logging.
 
 ---
 
@@ -12,7 +12,9 @@ intervention.
 - **Python 3.12**
 - **FastAPI** for API endpoints
 - **SQLAlchemy** for ORM and database management
+- **PostgreSQL** for database storage
 - **Docker** for containerization
+- **pytest** for testing API endpoints and functionality
 - **unittest** for testing (i.e., testing participant submitted code snippets)
 - **Ollama/ChatGPT** clients for LLM rephrasing of error messages
 
@@ -20,8 +22,8 @@ intervention.
 
 ## 🏗️ API Architecture
 
-- Modular FastAPI routers for participants, code submissions, and interventions
-- SQLAlchemy models for participants and submissions
+- Modular FastAPI routers for participants, code fix submissions, error message feedback, and events
+- SQLAlchemy models for `code_submissions`, `events`, `participants`, and `events`
 - Evaluator service for syntax and semantic code checks
 - LLM-based error rephrasing for educational feedback
 - Data folder for code snippets, test suites, and error messages
@@ -59,16 +61,21 @@ intervention.
 
 ## ⚙️ Environment Variables
 
-| Variable       | Description                                                              | Example Value                                                                                           |
-|----------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| DATABASE_URL   | PostgreSQL connection string                                             | postgresql://admin:admin@localhost:5432/prolific                                                        |
-| OLLAMA_URL     | URL for the Ollama LLM service                                           | http://localhost:11434                                                                                  |
-| FRONTEND_URL   | Allowed frontend origin for CORS                                         | http://localhost:3000                                                                                   |
-| OPENAI_API_KEY | API key for OpenAI (used for LLM error rephrasing if ChatGPT is enabled) | your_openai_api_key_here -> note that we do not use the ChatGPT Client unless modifying the actual code |                  
+| Variable         | Description                                                              | Example Value                                                                                           | Required |
+|------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|----------|
+| `DATABASE_URL`   | PostgreSQL connection string                                             | `postgresql://admin:admin@localhost:5432/prolific`                                                      | yes      |
+| `OLLAMA_URL`     | URL for the Ollama LLM service                                           | http://localhost:11434                                                                                  | yes      |
+| `FRONTEND_URL`   | Allowed frontend origin for CORS                                         | http://localhost:3000                                                                                   | yes      |
+| `OPENAI_API_KEY` | API key for OpenAI (used for LLM error rephrasing if ChatGPT is enabled) | your_openai_api_key_here -> note that we do not use the ChatGPT Client unless modifying the actual code | no       |      
 
 ---
 
 ## 📚 Example Usage
+
+Below we list some example API calls that can be made to the backend. Note that these are just examples and the
+actual implementation may vary based on your specific requirements. Additionally, some API endpoints may not be
+available unless previous calls have been made (e.g., you need to submit participant consent before submitting
+experience data, and you need to submit experience data before getting MCQ questions).
 
 - **Submit participant consent:**
   ```http
