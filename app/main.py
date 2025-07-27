@@ -1,19 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 from app.api import code, events, feedback, participants
 from app.core.config import FRONTEND_URL
 from app.db.base import Base
 from app.db.session import engine
 
-app = FastAPI(title="Error Message Study API")
 
-
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(application: FastAPI):
     # Create tables once on startup
     Base.metadata.create_all(bind=engine)
+    yield
 
+
+# Initialize FastAPI app with lifespan context manager
+app = FastAPI(title="Error Message Study API", lifespan=lifespan)
 
 # Define & include API routers
 app.include_router(
