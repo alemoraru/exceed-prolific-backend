@@ -33,6 +33,12 @@ class ExperienceRequest(BaseModel):
     python_yoe: int
 
 
+class ExperienceResponse(BaseModel):
+    """Model for the response of participant experience submission."""
+
+    participant_id: str
+
+
 class QuestionRequest(BaseModel):
     """Model for participant question response."""
 
@@ -40,6 +46,13 @@ class QuestionRequest(BaseModel):
     question_id: str
     answer: str
     time_taken_ms: int
+
+
+class QuestionResponse(BaseModel):
+    """Model for the response of participant question submission."""
+
+    participant_id: str
+    question_id: str
 
 
 class RevokeConsentRequest(BaseModel):
@@ -132,7 +145,7 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
     return {"participant_id": request.participant_id, "consent": False}
 
 
-@router.post("/experience")
+@router.post("/experience", response_model=ExperienceResponse)
 async def submit_experience(request: ExperienceRequest, db: Session = Depends(get_db)):
     """
     Submit participant's Python experience in years. This endpoint is called when the participant
@@ -193,7 +206,7 @@ async def get_questions(participant_id: str, db: Session = Depends(get_db)):
     return participant.mcq_questions
 
 
-@router.post("/question")
+@router.post("/question", response_model=QuestionResponse)
 async def submit_question(request: QuestionRequest, db: Session = Depends(get_db)):
     """
     Submit participant's answer to a multiple-choice question. This endpoint is called when the participant
