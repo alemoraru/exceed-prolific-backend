@@ -19,7 +19,7 @@ ERROR MESSAGE:
 TASK:
 
 1. Extract the exception type and line number from ERROR.
-2. Write exactly one paragraph (around 25-30 words or less) that:
+2. Write exactly one paragraph (around 20-25 words or less) that:
     - Begins with "**<ExceptionType>** at **line <line>**:"
     - Briefly states the cause and hints at a fix.
     - Focuses on providing helpful hints or suggestions, without directly giving the corrected code.

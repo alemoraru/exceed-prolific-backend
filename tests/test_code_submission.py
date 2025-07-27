@@ -41,7 +41,7 @@ class TestCodeSubmission:
             )
         # Patch evaluate_code to return dummy values
         monkeypatch.setattr(
-            "app.api.code_submission.evaluate_code",
+            "app.api.code.evaluate_code",
             lambda code, snippet_id, intervention_type: ("success", "", 1, 1),
         )
 
