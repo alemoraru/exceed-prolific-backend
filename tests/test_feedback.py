@@ -56,8 +56,14 @@ class TestFeedbackSubmission:
             },
         )
 
-    def test_submit_feedback_success(self, client):
+    def test_submit_feedback_success(self, client, monkeypatch):
         """Test successful feedback submission after participant registration and code submission."""
+
+        # Patch evaluate_code to return dummy values
+        monkeypatch.setattr(
+            "app.api.code.evaluate_code",
+            lambda code, snippet_id, intervention_type: ("success", "", 1, 1),
+        )
 
         self.setup_participant_and_submission(client)
         response = client.post(
@@ -115,8 +121,14 @@ class TestFeedbackSubmission:
         assert response.status_code == 403
         assert response.json()["detail"] == "Consent is required to continue."
 
-    def test_submit_feedback_invalid_attempt_number(self, client):
+    def test_submit_feedback_invalid_attempt_number(self, client, monkeypatch):
         """Test that feedback submission fails if attempt number is not 1 or 2."""
+
+        # Patch evaluate_code to return dummy values
+        monkeypatch.setattr(
+            "app.api.code.evaluate_code",
+            lambda code, snippet_id, intervention_type: ("success", "", 1, 1),
+        )
 
         self.setup_participant_and_submission(client)
         response = client.post(
@@ -143,9 +155,15 @@ class TestFeedbackSubmission:
         ],
     )
     def test_submit_feedback_invalid_likert(
-        self, client, authoritativeness, cognitive_load, readability
+        self, client, monkeypatch, authoritativeness, cognitive_load, readability
     ):
         """Test that feedback submission fails if Likert ratings are out of range."""
+
+        # Patch evaluate_code to return dummy values
+        monkeypatch.setattr(
+            "app.api.code.evaluate_code",
+            lambda code, snippet_id, intervention_type: ("success", "", 1, 1),
+        )
 
         self.setup_participant_and_submission(client)
         response = client.post(

@@ -6,18 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.data.questions import get_randomized_questions_for_participant
 from app.db import models
-from app.db.session import SessionLocal
+from app.db.session import get_db
 from app.utils.enums import InterventionType, SkillLevel
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 class ConsentRequest(BaseModel):
@@ -41,6 +33,12 @@ class ExperienceRequest(BaseModel):
     python_yoe: int
 
 
+class ExperienceResponse(BaseModel):
+    """Model for the response of participant experience submission."""
+
+    participant_id: str
+
+
 class QuestionRequest(BaseModel):
     """Model for participant question response."""
 
@@ -48,6 +46,13 @@ class QuestionRequest(BaseModel):
     question_id: str
     answer: str
     time_taken_ms: int
+
+
+class QuestionResponse(BaseModel):
+    """Model for the response of participant question submission."""
+
+    participant_id: str
+    question_id: str
 
 
 class RevokeConsentRequest(BaseModel):
@@ -140,7 +145,7 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
     return {"participant_id": request.participant_id, "consent": False}
 
 
-@router.post("/experience")
+@router.post("/experience", response_model=ExperienceResponse)
 async def submit_experience(request: ExperienceRequest, db: Session = Depends(get_db)):
     """
     Submit participant's Python experience in years. This endpoint is called when the participant
@@ -196,11 +201,12 @@ async def get_questions(participant_id: str, db: Session = Depends(get_db)):
         participant.mcq_answer_map = answer_map
         participant.mcq_questions = questions
         db.commit()
+        db.refresh(participant)
 
     return participant.mcq_questions
 
 
-@router.post("/question")
+@router.post("/question", response_model=QuestionResponse)
 async def submit_question(request: QuestionRequest, db: Session = Depends(get_db)):
     """
     Submit participant's answer to a multiple-choice question. This endpoint is called when the participant
@@ -245,8 +251,6 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Answer must be an integer index of the selected option",
         )
-    correct_index = participant.mcq_answer_map[request.question_id]
-    is_correct = submitted_index == correct_index
     updated = {
         **existing_answers,
         request.question_id: {
@@ -256,6 +260,7 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     }
     participant.answers = updated
     db.commit()
+    db.refresh(participant)
 
     # If 8 questions have been answered, that means all questions have been answered,
     # and we can proceed with skill level and intervention type assignment
@@ -340,3 +345,4 @@ def assign_skill_and_intervention(participant, db) -> None:
     assigned_type = assign_intervention_type(contingent_count, pragmatic_count)
     participant.intervention_type = assigned_type
     db.commit()
+    db.refresh(participant)
