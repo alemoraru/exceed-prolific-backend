@@ -10,7 +10,10 @@ from app.db.session import engine
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    # Create tables once on startup
+    """
+    Lifespan context manager to handle application startup and shutdown events.
+    In our case, we create the database tables on startup.
+    """
     Base.metadata.create_all(bind=engine)
     yield
 
