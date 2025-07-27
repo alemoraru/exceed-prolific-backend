@@ -35,7 +35,9 @@ async def log_event(request: EventRequest, db: Session = Depends(get_db)):
 
     participant = db.get(models.Participant, request.participant_id)
     if not participant:
-        raise HTTPException(status_code=404, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
     if not participant.consent:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

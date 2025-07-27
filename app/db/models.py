@@ -1,5 +1,4 @@
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String
-from sqlalchemy.sql import func
+from sqlalchemy import JSON, Boolean, Column, Integer, String
 
 from app.db.base import Base
 
@@ -19,10 +18,10 @@ class Participant(Base):
     correct_mcq_count = Column(Integer, nullable=True)
 
 
-class Submission(Base):
+class CodeSubmission(Base):
     """Model representing a code submission attempt by a participant for a snippet."""
 
-    __tablename__ = "submissions"
+    __tablename__ = "code_submissions"
     participant_id = Column(String, primary_key=True, index=True)
     snippet_id = Column(String, primary_key=True, index=True)
     attempt_number = Column(Integer, primary_key=True)
@@ -43,4 +42,18 @@ class Event(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     participant_id = Column(String, index=True, nullable=False)
     event_type = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+
+
+class Feedback(Base):
+    """Model representing Likert scale feedback for error messages after a code submission."""
+
+    __tablename__ = "feedback"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    participant_id = Column(String, index=True, nullable=False)
+    snippet_id = Column(String, index=True, nullable=False)
+    attempt_number = Column(Integer, nullable=False)
+    authoritativeness = Column(Integer, nullable=False)  # Likert scale 1-5
+    cognitive_load = Column(Integer, nullable=False)  # Likert scale 1-5
+    readability = Column(Integer, nullable=False)  # Likert scale 1-5
     timestamp = Column(String, nullable=False)

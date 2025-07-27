@@ -64,9 +64,9 @@ QUESTIONS: List[Question] = [
         "qualtrics_id": "Q7.1",
         "question": "Consider the code snippet below. What option correctly explains the behavior of the following program?",
         "code": 'x = int("0")\n'
-                + "if x != 0 and (10 / x) > 2:\n"
-                + '    print("Division succeeded")\n'
-                + 'print("Could not divide by " + str(x))',
+        + "if x != 0 and (10 / x) > 2:\n"
+        + '    print("Division succeeded")\n'
+        + 'print("Could not divide by " + str(x))',
         "options": [
             "The code contains a syntax error and won't run properly",
             "The condition should use `or` instead of `and`, because `and` forces evaluation of both sides of the condition, which throws an error",
@@ -81,10 +81,10 @@ QUESTIONS: List[Question] = [
         "qualtrics_id": "Q7.2",
         "question": "Read the code snippet below and identify which code line is logically wrong when computing the area of a rectangle.",
         "code": "def area_rectangle(length, width):\n"
-                + '   """Compute the area of a rectangle and print it."""\n'
-                + "   area = length * width\n"
-                + '   print("The area is", area)\n\n'
-                + "area_rectangle(5, 10)",
+        + '   """Compute the area of a rectangle and print it."""\n'
+        + "   area = length * width\n"
+        + '   print("The area is", area)\n\n'
+        + "area_rectangle(5, 10)",
         "options": [
             "Line 2 – Incorrect docstring format",
             "Line 3 – Incorrect multiplication operator",
@@ -127,12 +127,12 @@ QUESTIONS: List[Question] = [
         "qualtrics_id": "Q10.1",
         "question": "Review the function below and determine the logical error causing an incorrect result, if any.",
         "code": "def find_max(numbers):\n"
-                + "    max_val = 0\n"
-                + "    for num in numbers:\n"
-                + "        if num > max_val:\n"
-                + "            max_val = num\n"
-                + "    return max_val\n\n"
-                + "result = find_max([-10, -5, -3])",
+        + "    max_val = 0\n"
+        + "    for num in numbers:\n"
+        + "        if num > max_val:\n"
+        + "            max_val = num\n"
+        + "    return max_val\n\n"
+        + "result = find_max([-10, -5, -3])",
         "error": None,
         "options": [
             "It incorrectly returns the wrong number instead of the maximum value due to improper initialization of `max_val`",

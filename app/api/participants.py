@@ -124,7 +124,9 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
     """
     participant = db.get(models.Participant, request.participant_id)
     if not participant:
-        raise HTTPException(status_code=404, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
 
     # Check if consent is already revoked / declined
     if not participant.consent:
@@ -151,7 +153,9 @@ async def submit_experience(request: ExperienceRequest, db: Session = Depends(ge
     # Must include existing participant_id
     participant = db.get(models.Participant, request.participant_id)
     if not participant:
-        raise HTTPException(status_code=404, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
     if not participant.consent:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -173,7 +177,9 @@ async def get_questions(participant_id: str, db: Session = Depends(get_db)):
     """
     participant = db.get(models.Participant, participant_id)
     if not participant:
-        raise HTTPException(status_code=404, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
     if not participant.consent:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -206,7 +212,9 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     """
     participant = db.get(models.Participant, request.participant_id)
     if not participant:
-        raise HTTPException(status_code=404, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
     if not participant.consent:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -217,13 +225,15 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
         or request.question_id not in participant.mcq_answer_map
     ):
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="MCQ answer map not found or question not served to participant",
         )
     # Prevent re-submission of the same question
     existing_answers = participant.answers or {}
     if request.question_id in existing_answers:
-        raise HTTPException(status_code=400, detail="Question already answered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Question already answered"
+        )
 
     # Validate answer index
     try:
@@ -232,7 +242,7 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
         # This case won't actually be reached, because the API will validate the type
         # and raise a 422 Unprocessable Entity error if the answer is not an integer.
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Answer must be an integer index of the selected option",
         )
     correct_index = participant.mcq_answer_map[request.question_id]
