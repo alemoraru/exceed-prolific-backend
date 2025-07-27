@@ -45,6 +45,23 @@ async def submit_feedback(
     if not participant.consent:
         raise HTTPException(status_code=403, detail="Consent is required to continue.")
 
+    # Check that the attempt number is valid (either 1 or 2)
+    if feedback.attempt_number not in [1, 2]:
+        raise HTTPException(
+            status_code=400, detail="Attempt number must be either 1 or 2"
+        )
+
+    # Check that likert scale ratings are within valid range (1-5)
+    if (
+        not (1 <= feedback.authoritativeness <= 5)
+        or not (1 <= feedback.cognitive_load <= 5)
+        or not (1 <= feedback.readability <= 5)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Feedback ratings must be integers between 1 and 5",
+        )
+
     # Optionally, check that the submission exists
     submission = (
         db.query(models.CodeSubmission)
