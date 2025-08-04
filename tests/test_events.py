@@ -16,11 +16,7 @@ class TestEvents:
         # Log event
         response = client.post(
             "/api/events/event",
-            json={
-                "participant_id": "eventuser1",
-                "event_type": "tab_switch",
-                "timestamp": "1721650000000",
-            },
+            json={"participant_id": "eventuser1", "event_type": "tab_switch"},
         )
         assert response.status_code == 200
 
@@ -36,11 +32,7 @@ class TestEvents:
         # Try to log event
         response = client.post(
             "/api/events/event",
-            json={
-                "participant_id": "eventuser2",
-                "event_type": "copy_paste",
-                "timestamp": "1721650000001",
-            },
+            json={"participant_id": "eventuser2", "event_type": "copy_paste"},
         )
         assert response.status_code == 403
         assert response.json()["detail"] == "Consent is required to record events."
@@ -51,11 +43,7 @@ class TestEvents:
         # Try to log event for a non-existent participant
         response = client.post(
             "/api/events/event",
-            json={
-                "participant_id": "notfound",
-                "event_type": "window_blur",
-                "timestamp": "1721650000002",
-            },
+            json={"participant_id": "notfound", "event_type": "window_blur"},
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Participant not found"
@@ -76,17 +64,6 @@ class TestEvents:
                 "participant_id": "eventuser3",
                 # "event_type" missing
                 "timestamp": "1721650000003",
-            },
-        )
-        assert response.status_code == 422
-
-        # Log event with missing timestamp
-        response = client.post(
-            "/api/events/event",
-            json={
-                "participant_id": "eventuser3",
-                "event_type": "tab_switch",
-                # "timestamp" missing
             },
         )
         assert response.status_code == 422

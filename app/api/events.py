@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -13,11 +15,10 @@ class EventRequest(BaseModel):
 
     participant_id: str
     event_type: str
-    timestamp: str
 
 
 @router.post("/event")
-async def log_event(request: EventRequest, db: Session = Depends(get_db)):
+async def log_event(request: EventRequest, db: Session = Depends(get_db)) -> None:
     """
     Log an event for a participant (e.g., window/tab switch, copy-paste).
     :param request: EventRequest containing participant_id, event_type, and timestamp
@@ -36,10 +37,12 @@ async def log_event(request: EventRequest, db: Session = Depends(get_db)):
             detail="Consent is required to record events.",
         )
 
+    now = datetime.now(UTC).isoformat()
     event = models.Event(
         participant_id=request.participant_id,
         event_type=request.event_type,
-        timestamp=request.timestamp,
+        timestamp=now,
     )
+
     db.add(event)
     db.commit()

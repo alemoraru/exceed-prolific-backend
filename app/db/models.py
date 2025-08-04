@@ -9,13 +9,16 @@ class Participant(Base):
     __tablename__ = "participants"
     participant_id = Column(String, primary_key=True, index=True)
     consent = Column(Boolean, nullable=False)
-    skill_level = Column(String, index=True, nullable=True)
-    intervention_type = Column(String, nullable=True, index=True)
     python_yoe = Column(Integer, nullable=True)
     answers = Column(JSON, nullable=True)
     mcq_questions = Column(JSON, nullable=True)
     mcq_answer_map = Column(JSON, nullable=True)
     correct_mcq_count = Column(Integer, nullable=True)
+    skill_level = Column(String, index=True, nullable=True)
+    intervention_type = Column(String, nullable=True, index=True)
+    snippet_id = Column(String, nullable=True, index=True)
+    started_at = Column(String, nullable=True)
+    ended_at = Column(String, nullable=True)
 
 
 class CodeSubmission(Base):
@@ -26,10 +29,7 @@ class CodeSubmission(Base):
     snippet_id = Column(String, primary_key=True, index=True)
     attempt_number = Column(Integer, primary_key=True)
     code = Column(String)
-    error_msg_displayed = Column(
-        String
-    )  # The error message shown to the user before this attempt
-    status = Column(String)  # e.g., "success", "syntax_error", "test_failure"
+    status = Column(String)
     tests_passed = Column(Integer, nullable=True)
     tests_total = Column(Integer, nullable=True)
     time_taken_ms = Column(Integer, nullable=True)
@@ -51,9 +51,25 @@ class Feedback(Base):
     __tablename__ = "feedback"
     id = Column(Integer, primary_key=True, autoincrement=True)
     participant_id = Column(String, index=True, nullable=False)
-    snippet_id = Column(String, index=True, nullable=False)
-    attempt_number = Column(Integer, nullable=False)
-    authoritativeness = Column(Integer, nullable=False)  # Likert scale 1-5
-    cognitive_load = Column(Integer, nullable=False)  # Likert scale 1-5
-    readability = Column(Integer, nullable=False)  # Likert scale 1-5
-    timestamp = Column(String, nullable=False)
+    snippet_id = Column(String, index=True, nullable=True)
+    error_message = Column(String, nullable=True)
+    # Readability
+    length = Column(Integer, nullable=True)  # Likert scale 1-5
+    jargon = Column(Integer, nullable=True)  # Likert scale 1-5
+    sentence_structure = Column(Integer, nullable=True)  # Likert scale 1-5
+    vocabulary = Column(Integer, nullable=True)  # Likert scale 1-5
+    time_taken_ms_readability = Column(
+        Integer, nullable=True
+    )  # Time taken for readability feedback
+    # Cognitive load
+    intrinsic_load = Column(Integer, nullable=True)  # Likert scale 1-5
+    extraneous_load = Column(Integer, nullable=True)  # Likert scale 1-5
+    germane_load = Column(Integer, nullable=True)  # Likert scale 1-5
+    time_taken_ms_cognitive_load = Column(
+        Integer, nullable=True
+    )  # Time taken for cognitive load feedback
+    # Authoritativeness
+    authoritativeness = Column(Integer, nullable=True)  # Likert scale 1-5
+    time_taken_ms_authoritativeness = Column(
+        Integer, nullable=True
+    )  # Time taken for authoritativeness feedback

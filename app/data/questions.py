@@ -146,9 +146,17 @@ QUESTIONS: List[Question] = [
 
 
 def get_randomized_questions() -> List[Question]:
+    """
+    Returns a list of questions with randomized order and options.
+    Each question's options are also randomized, and the correct answer index is updated accordingly.
+    :return: A list of randomized questions with shuffled options and updated correct answer indices.
+    """
     questions = QUESTIONS.copy()
     random.shuffle(questions)
     randomized = []
+
+    # Iterate through each question, shuffle its options,
+    # and update the correct answer index accordingly.
     for q in questions:
         options = q["options"].copy()
         random.shuffle(options)
@@ -166,6 +174,7 @@ def get_randomized_questions_for_participant() -> tuple[list[Any], dict[Any, Any
     Returns a list of questions with randomized order and options, excluding qualtrics_id and correctAnswer.
     Returns only the fields: id, question, options, code, error.
     Also returns a mapping of question_id to correct answer index for backend use.
+    :return: A tuple containing a list of randomized questions and a mapping of question IDs to their correct answer indices.
     """
     questions = QUESTIONS.copy()
     random.shuffle(questions)

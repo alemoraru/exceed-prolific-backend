@@ -1,4 +1,6 @@
 import random
+from datetime import UTC, datetime
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -6,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.data.questions import get_randomized_questions_for_participant
 from app.db import models
+from app.db.models import Participant
 from app.db.session import get_db
 from app.utils.enums import InterventionType, SkillLevel
 
@@ -107,12 +110,32 @@ async def submit_consent(request: ConsentRequest, db: Session = Depends(get_db))
     # Use participant_id provided by the user (i.e., Prolific ID)
     pid = request.participant_id
 
-    # Store initial record with consent flag
-    participant = models.Participant(
-        participant_id=pid,
-        answers={},
-        consent=request.consent,
-    )
+    # Check if participant already exists
+    existing_participant = db.get(models.Participant, pid)
+    if existing_participant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Participant already exists. Use a different ID.",
+        )
+
+    # Create a new participant record with the provided consent and current timestamp
+    now = datetime.now(UTC).isoformat()
+    if request.consent:
+        participant = models.Participant(
+            participant_id=pid,
+            answers={},
+            consent=request.consent,
+            started_at=now,
+        )
+    else:
+        participant = models.Participant(
+            participant_id=pid,
+            answers={},
+            consent=request.consent,
+            started_at=now,
+            ended_at=now,
+        )
+
     db.add(participant)
     db.commit()
     return {"participant_id": pid, "consent": request.consent}
@@ -133,14 +156,18 @@ async def revoke_consent(request: RevokeConsentRequest, db: Session = Depends(ge
             status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
         )
 
-    # Check if consent is already revoked / declined
+    # Check if consent has already been revoked or declined
     if not participant.consent:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Consent has already been revoked or declined.",
         )
 
+    # Update participant's consent status and ended_at timestamp
+    now = datetime.now(UTC).isoformat()
+    participant.ended_at = now
     participant.consent = False
+
     db.commit()
     return {"participant_id": request.participant_id, "consent": False}
 
@@ -265,7 +292,7 @@ async def submit_question(request: QuestionRequest, db: Session = Depends(get_db
     # If 8 questions have been answered, that means all questions have been answered,
     # and we can proceed with skill level and intervention type assignment
     if len(updated) == 8:
-        assign_skill_and_intervention(participant, db)
+        assign_skill_and_intervention_and_snippet(participant, db)
 
     return {
         "participant_id": request.participant_id,
@@ -287,26 +314,37 @@ def assess_skill_level(correct_count: int, python_yoe: int) -> str:
         return SkillLevel.EXPERT.value if python_yoe >= 5 else SkillLevel.NOVICE.value
 
 
-def assign_intervention_type(contingent_count: int, pragmatic_count: int) -> str:
+def get_skill_participants(db, skill_level: str) -> List[Participant]:
     """
-    Assign intervention type to balance the groups, breaking ties randomly.
-    :param contingent_count: Number of participants who were assigned the CONTINGENT intervention.
-    :param pragmatic_count: Number of participants who were assigned the PRAGMATIC intervention.
-    :return: Assigned intervention type as a string.
+    Returns all participants with the given skill level.
     """
-    if contingent_count < pragmatic_count:
-        return InterventionType.CONTINGENT.value
-    elif pragmatic_count < contingent_count:
-        return InterventionType.PRAGMATIC.value
-    else:
-        return random.choice(
-            [InterventionType.CONTINGENT.value, InterventionType.PRAGMATIC.value]
-        )
+    return (
+        db.query(models.Participant)
+        .filter(models.Participant.skill_level == skill_level)
+        .all()
+    )
 
 
-def assign_skill_and_intervention(participant, db) -> None:
+def get_balanced_assignment(options: List[str], assigned_list: List[str]) -> str:
     """
-    Assigns skill level and intervention type to a participant based on their MCQ answers and experience.
+    Given a list of options and a list of already assigned values, returns the least-assigned option (randomly among ties).
+    :param options: List of possible options to assign.
+    :param assigned_list: List of already assigned values for the same options.
+    :return: A randomly chosen option from the least-assigned ones.
+    """
+    counts = {opt: 0 for opt in options}
+    for val in assigned_list:
+        if val in counts:
+            counts[val] += 1
+    min_count = min(counts.values())
+    lowest = [opt for opt, cnt in counts.items() if cnt == min_count]
+    return random.choice(lowest)
+
+
+def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
+    """
+    Assigns skill level, intervention type, and code snippet to a participant after MCQ answers and experience.
+    Balances assignment by picking the least-assigned type/snippet, breaking ties randomly.
     Updates the participant object and commits to the database.
     :param participant: Participant model instance.
     :param db: Database session.
@@ -323,26 +361,24 @@ def assign_skill_and_intervention(participant, db) -> None:
     participant.skill_level = skill_level
     participant.correct_mcq_count = correct_count
 
-    # --- InterventionType assignment logic ---
-    skill_participants = (
-        db.query(models.Participant)
-        .filter(
-            models.Participant.skill_level == skill_level,
-            models.Participant.intervention_type != None,
-        )
-        .all()
+    # Get all participants with this skill level
+    skill_participants = get_skill_participants(db, skill_level)
+
+    # Balanced assignment for intervention type
+    intervention_types = [
+        InterventionType.CONTINGENT.value,
+        InterventionType.PRAGMATIC.value,
+        InterventionType.STANDARD.value,
+    ]
+    assigned_types = [p.intervention_type for p in skill_participants]
+    participant.intervention_type = get_balanced_assignment(
+        intervention_types, assigned_types
     )
-    contingent_count = sum(
-        1
-        for p in skill_participants
-        if p.intervention_type == InterventionType.CONTINGENT.value
-    )
-    pragmatic_count = sum(
-        1
-        for p in skill_participants
-        if p.intervention_type == InterventionType.PRAGMATIC.value
-    )
-    assigned_type = assign_intervention_type(contingent_count, pragmatic_count)
-    participant.intervention_type = assigned_type
+
+    # Balanced assignment for code snippet
+    code_snippets = ["A", "B", "C", "D"]
+    assigned_snippets = [p.snippet_id for p in skill_participants]
+    participant.snippet_id = get_balanced_assignment(code_snippets, assigned_snippets)
+
     db.commit()
     db.refresh(participant)

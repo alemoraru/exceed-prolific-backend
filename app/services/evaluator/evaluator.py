@@ -8,11 +8,9 @@ import tempfile
 from types import ModuleType
 from typing import Optional, Tuple
 
-from app.services.llm.intervention import get_rephrased_error_message
-
 
 def evaluate_code(
-    code: str, snippet_id: str, intervention_type: str
+    code: str, snippet_id: str
 ) -> Tuple[str, str, Optional[int], Optional[int]]:
     """
     Evaluate user code against a predefined snippet and its test suite.
@@ -26,7 +24,6 @@ def evaluate_code(
 
     :param code: The user code to evaluate.
     :param snippet_id: The ID of the snippet to evaluate against.
-    :param intervention_type: The type of intervention to apply for error rephrasing.
     :return: A tuple containing:
         - status: "success", "syntax_error", "test_failure", or "runtime_error"
         - rephrased error message (if applicable)
@@ -34,10 +31,10 @@ def evaluate_code(
         - total number of tests (if applicable)
     """
     snippet_map = {
-        "0": ("snippetA/snippetA.py", "snippetA/test_snippetA.py", "TestSnippetA"),
-        "1": ("snippetB/snippetB.py", "snippetB/test_snippetB.py", "TestSnippetB"),
-        "2": ("snippetC/snippetC.py", "snippetC/test_snippetC.py", "TestSnippetC"),
-        "3": ("snippetD/snippetD.py", "snippetD/test_snippetD.py", "TestSnippetD"),
+        "A": ("snippetA/snippetA.py", "snippetA/test_snippetA.py", "TestSnippetA"),
+        "B": ("snippetB/snippetB.py", "snippetB/test_snippetB.py", "TestSnippetB"),
+        "C": ("snippetC/snippetC.py", "snippetC/test_snippetC.py", "TestSnippetC"),
+        "D": ("snippetD/snippetD.py", "snippetD/test_snippetD.py", "TestSnippetD"),
     }
     if snippet_id not in snippet_map:
         return "not_found", f"No test suite defined for {snippet_id}", None, None
@@ -71,10 +68,8 @@ def evaluate_code(
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
-            llm_msg = get_rephrased_error_message(
-                orig_code, orig_error, intervention_type
-            )
-            return "syntax_error", llm_msg, None, None
+            # Only return the raw error message, do not rephrase
+            return "syntax_error", orig_error, None, None
 
         # Run only the relevant test class in the relevant test file
         try:
@@ -95,10 +90,8 @@ def evaluate_code(
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
-            llm_msg = get_rephrased_error_message(
-                orig_code, orig_error, intervention_type
-            )
-            return "runtime_error", llm_msg, None, None
+            # Only return the raw error message, do not rephrase
+            return "runtime_error", orig_error, None, None
         if result.returncode == 0:
             # Parse output for test count
             passed, total = _parse_unittest_output(result.stdout)
@@ -108,10 +101,8 @@ def evaluate_code(
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
-            llm_msg = get_rephrased_error_message(
-                orig_code, orig_error, intervention_type
-            )
-            return "test_failure", llm_msg, passed, total
+            # Only return the raw error message, do not rephrase
+            return "test_failure", orig_error, passed, total
 
 
 def _load_module(path: str, module_name: str) -> ModuleType:

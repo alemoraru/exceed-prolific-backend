@@ -1,5 +1,7 @@
 import pytest
 
+from app.api.participants import assess_skill_level, get_balanced_assignment
+
 
 @pytest.mark.usefixtures("client")
 class TestParticipants:
@@ -377,3 +379,59 @@ class TestParticipants:
             assert response.status_code == 200
             assert response.json()["participant_id"] == "all_questions"
             assert response.json()["question_id"] == qid
+
+
+class TestSkillAssessment:
+    """Test suite for skill assessment function."""
+
+    def test_assess_skill_level_expert_by_mcq(self):
+        """Test assessing skill level as expert based on MCQ performance."""
+        assert assess_skill_level(6, 1) == "expert"
+        assert assess_skill_level(8, 0) == "expert"
+
+    def test_assess_skill_level_novice_by_mcq(self):
+        """Test assessing skill level as novice based on MCQ performance."""
+        assert assess_skill_level(3, 10) == "novice"
+        assert assess_skill_level(0, 0) == "novice"
+
+    def test_assess_skill_level_expert_by_experience(self):
+        """Test assessing skill level as expert based on experience (used in conjunction with MCQ)."""
+        assert assess_skill_level(4, 5) == "expert"
+        assert assess_skill_level(5, 7) == "expert"
+
+    def test_assess_skill_level_novice_by_experience(self):
+        """Test assessing skill level as novice based on experience (used in conjunction with MCQ)."""
+        assert assess_skill_level(4, 3) == "novice"
+        assert assess_skill_level(5, 4) == "novice"
+
+
+class TestBalancedAssignment:
+    """Test suite for the balanced assignment function."""
+
+    def test_get_balanced_assignment_least_assigned(self):
+        """Test that the function returns the least assigned option."""
+        options = ["A", "B", "C"]
+        assigned = ["A", "A", "B"]
+
+        # C is least assigned
+        assert get_balanced_assignment(options, assigned) == "C"
+
+    def test_get_balanced_assignment_tie(self):
+        """Test that the function returns one of the least assigned options in case of a tie."""
+        options = ["A", "B", "C"]
+        assigned = ["A", "B", "C", "A", "B", "C"]
+
+        # All have 2, so any is valid
+        results = set(get_balanced_assignment(options, assigned) for _ in range(20))
+        assert results.issubset(set(options))
+        assert len(results) > 1  # Should be random among ties
+
+    def test_get_balanced_assignment_empty(self):
+        """Test that the function returns randomly from options when no assignments exist."""
+        options = ["A", "B", "C"]
+        assigned = []
+
+        # All are least assigned
+        results = set(get_balanced_assignment(options, assigned) for _ in range(10))
+        assert results.issubset(set(options))
+        assert len(results) > 1  # Should be random among all
