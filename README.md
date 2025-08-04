@@ -23,7 +23,7 @@ message feedback, and event logging.
 ## 🏗️ API Architecture
 
 - Modular FastAPI routers for participants, code fix submissions, error message feedback, and events
-- SQLAlchemy models for `code_submissions`, `events`, `participants`, and `events`
+- SQLAlchemy models for `participants`, `code_submissions`, `errors`, and `events`
 - Evaluator service for syntax and semantic code checks
 - LLM-based error rephrasing for educational feedback
 - Data folder for code snippets, test suites, and error messages
@@ -65,8 +65,14 @@ message feedback, and event logging.
 |------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|----------|
 | `DATABASE_URL`   | PostgreSQL connection string                                             | `postgresql://admin:admin@localhost:5432/prolific`                                                      | yes      |
 | `OLLAMA_URL`     | URL for the Ollama LLM service                                           | http://localhost:11434                                                                                  | yes      |
-| `FRONTEND_URL`   | Allowed frontend origin for CORS                                         | http://localhost:3000                                                                                   | yes      |
+| `OLLAMA_MODEL`   | Ollama model to use for error rephrasing                                 | `deepseek-coder:6.7b` (default value)                                                                   | yes      |
+| `FRONTEND_URL`   | Allowed frontend origin for CORS                                         | http://localhost:3000                                                                                   | no       |
 | `OPENAI_API_KEY` | API key for OpenAI (used for LLM error rephrasing if ChatGPT is enabled) | your_openai_api_key_here -> note that we do not use the ChatGPT Client unless modifying the actual code | no       |      
+
+> **Note**: The `OLLAMA_MODEL` variable is set to `deepseek-coder:6.7b` by default, which is a model that we have used
+> for rephrasing error messages. If you want to use a different model, make sure to set the `OLLAMA_MODEL`
+> environment variable to the desired model name. However, this will work only if you actually have the model
+> downloaded on your machine using Ollama.
 
 ---
 

@@ -20,6 +20,7 @@ SUPPORTED_MODELS = {
     ModelType.OLLAMA_QWEN2_5_CODER_3_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_7_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama",
+    ModelType.OLLAMA_DEEPSEEK_CODER_6_7_B.value: "ollama",
 }
 
 
@@ -69,11 +70,11 @@ class OllamaClient(BaseModelClient):
     See: https://github.com/ollama/ollama/blob/main/docs/api.md
     """
 
-    def __init__(self, model: str = "llama:3.2:3b", temperature: float = 0.2):
+    def __init__(self, model: str = "deepseek-coder:6.7b", temperature: float = 0):
         """
         Initialize the Ollama client with the specified model and temperature.
-        :param model: The model to use for generating completions (e.g., "llama:3.2:3b").
-        :param temperature: The temperature for the model's responses, controlling "randomness".
+        :param model: The model to use for generating completions (default is "deepseek-coder:6.7b").
+        :param temperature: The temperature for the model's responses, controlling "randomness" (default is 0).
         """
         self.model = model
         self.temperature = temperature
