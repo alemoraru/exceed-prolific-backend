@@ -6,6 +6,8 @@ from app.data.snippets import get_snippet
 from app.db import models
 from app.db.session import get_db
 from app.services.evaluator.evaluator import evaluate_code
+from app.services.llm.intervention import get_rephrased_error_message
+from app.utils.enums import InterventionType
 
 router = APIRouter()
 
@@ -22,7 +24,7 @@ class CodeSubmission(BaseModel):
 
 
 @router.post("/submit")
-async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db)):
+async def submit_code_fix(submission: CodeSubmission, db: Session = Depends(get_db)):
     """
     Submit the user's code for compilation check and evaluation.
     Records each attempt with attempt_number, error message shown, and evaluation status.
@@ -43,8 +45,17 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
             status.HTTP_400_BAD_REQUEST,
             detail="Intervention type not assigned for participant.",
         )
+    if not participant.snippet_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Code snippet not assigned for participant.",
+        )
+    if submission.snippet_id != participant.snippet_id:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="You can only submit code for your assigned snippet.",
+        )
 
-    # Get PID and snippet ID from submission as they are required for evaluation
     pid = submission.participant_id
     snippet_id = submission.snippet_id
 
@@ -57,20 +68,17 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     )
     attempt_number = 1 if not last_attempt else last_attempt.attempt_number + 1
 
+    # Enforce maximum of 3 attempts
+    if attempt_number > 3:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="Maximum number of attempts (3) reached for this snippet.",
+        )
+
     # Evaluate code (syntax + tests)
     code_status, llm_error_msg, tests_passed, tests_total = evaluate_code(
-        submission.code, snippet_id, str(participant.intervention_type)
+        submission.code, snippet_id
     )
-
-    # Store the error message that was displayed to the user
-    # in the database for analysis later
-    if attempt_number == 1:
-        # Always use static error for first attempt
-        snippet = get_snippet(snippet_id)
-        error_msg_displayed = snippet["error"] if snippet else ""
-    else:
-        # Use LLM error for follow-up attempts
-        error_msg_displayed = llm_error_msg
 
     # Record the submission attempt
     sub = models.CodeSubmission(
@@ -78,7 +86,6 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
         snippet_id=snippet_id,
         attempt_number=attempt_number,
         code=submission.code,
-        error_msg_displayed=error_msg_displayed,
         status=code_status,
         tests_passed=tests_passed,
         tests_total=tests_total,
@@ -95,17 +102,14 @@ async def submit_code(submission: CodeSubmission, db: Session = Depends(get_db))
     }
 
 
-@router.get("/snippet/{snippet_id}")
-def get_code_snippet(
-    snippet_id: str, participant_id: str, db: Session = Depends(get_db)
-):
+@router.get("/snippet")
+def get_code_and_error(participant_id: str, db: Session = Depends(get_db)):
     """
-    Retrieve the code snippet for a given snippet ID and participant ID.
-    :param snippet_id: The ID of the code snippet to retrieve.
+    Retrieve the code snippet and error message for the participant's assigned snippet.
     :param participant_id: The ID of the participant requesting the snippet.
     :param db: Database session dependency.
     :raises HTTPException: If participant does not exist, has not given consent, or snippet is not found.
-    :return: A dictionary containing the snippet ID, code, and respective standard error message.
+    :return: A dictionary containing the snippet ID, code, and respective error message.
     """
     participant = db.get(models.Participant, participant_id)
     if not participant:
@@ -114,9 +118,42 @@ def get_code_snippet(
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, detail="Consent is required to continue."
         )
-    snippet = get_snippet(snippet_id)
+    if not participant.snippet_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Code snippet not assigned for participant.",
+        )
 
+    snippet_id = str(participant.snippet_id)
+    if participant.snippet_id != snippet_id:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="You can only retrieve your assigned snippet.",
+        )
+
+    # Fetch the snippet from the data source
+    snippet = get_snippet(snippet_id)
     if not snippet:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Snippet not found")
 
-    return {"id": snippet_id, "code": snippet["code"], "error": snippet["error"]}
+    code = snippet["code"]
+    error = snippet["error"]
+    intervention_type = participant.intervention_type
+    markdown = False
+    if (
+        intervention_type == InterventionType.PRAGMATIC.value
+        or intervention_type == InterventionType.CONTINGENT.value
+    ):
+        error = get_rephrased_error_message(
+            code, error, InterventionType(intervention_type).value
+        )
+        markdown = True
+    feedback_entry = models.Feedback(
+        participant_id=participant_id,
+        snippet_id=snippet_id,
+        error_message=error,
+    )
+    db.add(feedback_entry)
+    db.commit()
+
+    return {"id": snippet_id, "code": code, "error": error, "markdown": markdown}

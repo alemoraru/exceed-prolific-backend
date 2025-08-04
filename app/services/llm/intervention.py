@@ -8,6 +8,11 @@ def get_rephrased_error_message(
 ) -> str:
     """
     Generate a rephrased error message based on the intervention type.
+    :param code_snippet: The original code snippet that caused the error.
+    :param error_msg: The original error message to be rephrased.
+    :param intervention_type: The type of intervention, either "pragmatic" or "contingent".
+    :return: The rephrased error message.
+    :raises ValueError: If the intervention type is invalid.
     """
     if intervention_type == "pragmatic":
         prompt = PRAGMATIC_PROMPT["template"].format(code=code_snippet, error=error_msg)
@@ -26,6 +31,6 @@ def get_rephrased_error_message(
     llm_client = ModelFactory.create_client(OLLAMA_MODEL)
 
     # Call the LLM to get the rephrased error message
-    response = llm_client.complete(prompt, system_prompt=system_prompt)
+    llm_response = llm_client.complete(prompt, system_prompt=system_prompt)
 
-    return response
+    return llm_response

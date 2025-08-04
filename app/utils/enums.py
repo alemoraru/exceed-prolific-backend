@@ -13,6 +13,7 @@ class InterventionType(Enum):
 
     PRAGMATIC = "pragmatic"
     CONTINGENT = "contingent"
+    STANDARD = "standard"
 
 
 class ModelType(Enum):

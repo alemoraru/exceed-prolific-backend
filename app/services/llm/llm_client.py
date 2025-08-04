@@ -70,12 +70,23 @@ class OllamaClient(BaseModelClient):
     """
 
     def __init__(self, model: str = "llama:3.2:3b", temperature: float = 0.2):
+        """
+        Initialize the Ollama client with the specified model and temperature.
+        :param model: The model to use for generating completions (e.g., "llama:3.2:3b").
+        :param temperature: The temperature for the model's responses, controlling "randomness".
+        """
         self.model = model
         self.temperature = temperature
         self.base_url = OLLAMA_URL
         self._client = httpx.Client(timeout=120)
 
     def complete(self, prompt: str, system_prompt: str = None) -> str:
+        """
+        Call the Ollama API to generate a completion based on the provided prompt.
+        :param prompt: The prompt to send to the model.
+        :param system_prompt: Optional system prompt to guide the model's behavior.
+        :return: The generated response from the model.
+        """
         payload: Dict[str, Any] = {
             "model": self.model,
             "temperature": self.temperature,
@@ -107,6 +118,13 @@ class ModelFactory:
 
     @staticmethod
     def create_client(model_name: str) -> BaseModelClient:
+        """
+        Create an LLM client based on the provided model name.
+        Supported models are defined in the SUPPORTED_MODELS dictionary.
+        :param model_name: The name of the model to create a client for.
+        :return: An instance of BaseModelClient or its subclass.
+        :raises ValueError: If the model name is not supported.
+        """
         client_type = SUPPORTED_MODELS.get(model_name)
         if client_type == "openai":
             return OpenAIClient(model=model_name)
