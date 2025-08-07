@@ -17,7 +17,7 @@ ERROR MESSAGE:
 ---
 TASK:
 
-1. Extract the exception type and line number from the ERROR message. Use the line number from the final shown before the error type—this is where the error occurred.
+1. Extract the exception type and line number from the ERROR message. If there are multiple File "...", line x entries, use the line number from the last such entry—this is where the error occurred.
 2. Write exactly one paragraph (around 20-25 words or less) that:
     - Begins with "**<ExceptionType>** at **line <line>**:"
     - Briefly states the cause and hints at a fix.
@@ -100,7 +100,7 @@ ERROR MESSAGE:
 ```
 ---
 TASK:
-1. Extract the exception type and line number from the ERROR message. Use the line number from the final shown before the error type—this is where the error occurred.
+1. Extract the exception type and line number from the ERROR message. If there are multiple File "...", line x entries, use the line number from the last such entry—this is where the error occurred.
 2. Begin your response with "**<ExceptionType>** at **line <line>**:" on the first line.
 3. Then write 3–5 sentences that:
     - Begin by confirming the likely intent or goal (e.g. "Did you mean to ...?") – this is the claim, showing you understand what the programmer was trying to do.
