@@ -1,9 +1,7 @@
 Traceback (most recent call last):
-  File "main.py", line 19, in <module>
+  File "main.py", line 41, in <module>
     main()
-  File "main.py", line 16, in main
-    system.process_scores(50, 70)
-  File "main.py", line 10, in process_scores
-    score = calculate_score(x, y)
-            ^^^^^^^^^^^^^^^
-NameError: name 'calculate_score' is not defined
+  File "main.py", line 38, in main
+    print("Vector", i, ":", vs.__getitem__[i])
+                            ~~~~~~~~~~~~~~^^^
+TypeError: 'builtin_function_or_method' object is not subscriptable

@@ -1,19 +1,41 @@
-class ScoringSystem:
+import math
 
-    @staticmethod
-    def calc_score(x, y):
-        """Returns a weighted score based on two inputs."""
-        return 0.4 * x + 0.6 * y
+def normalize(vec):
+    norm = math.sqrt(sum(x ** 2 for x in vec))
+    return [x / norm for x in vec] if norm else vec
 
-    def process_scores(self, x, y):
-        """Processes and prints a score using a helper function."""
-        score = calculate_score(x, y)
-        print("Final score:", score)
+def dot(a, b):
+    return sum(x * y for x, y in zip(a, b))
 
+def cosine(a, b):
+    return dot(normalize(a), normalize(b))
+
+def fixed_vectors():
+    """Returns a fixed set of vectors for testing purposes."""
+    return [
+        [1.0, 2.0, 3.0],
+        [2.0, 0.0, 1.0],
+        [-1.0, 1.0, 0.0],
+        [0.5, -2.0, 2.0]
+    ]
+
+def most_similar_pair(vectors):
+    """Finds the most similar pair of vectors based on cosine similarity."""
+    max_sim = -2
+    pair = (0, 1)
+    for i in range(len(vectors)):
+        for j in range(i + 1, len(vectors)):
+            sim = cosine(vectors[i], vectors[j])
+            if sim > max_sim:
+                max_sim = sim
+                pair = (i, j)
+    return pair
 
 def main():
-    system = ScoringSystem()
-    system.process_scores(50, 70)
+    vs = fixed_vectors()
+    print("Most similar pair:", most_similar_pair(vs))
+    for i in range(len(vs)):
+        print("Vector", i, ":", vs.__getitem__[i])
 
-
-main()
+if __name__ == "__main__":
+    main()
