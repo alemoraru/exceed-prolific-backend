@@ -1,11 +1,11 @@
 Traceback (most recent call last):
-  File "main.py", line 31, in <module>
+  File "main.py", line 26, in <module>
     summary = summarize_scores(users)
               ^^^^^^^^^^^^^^^^^^^^^^^
-  File "main.py", line 25, in summarize_scores
+  File "main.py", line 20, in summarize_scores
     return {u.name: u.top_score() for u in users}
                     ^^^^^^^^^^^^^
-  File "main.py", line 17, in top_score
+  File "main.py", line 13, in top_score
     return maximum(self.scores)
            ^^^^^^^
 NameError: name 'maximum' is not defined
