@@ -61,6 +61,28 @@ class TestSnippetB(unittest.TestCase):
         self.assertEqual(user.scores, [0])
         self.assertEqual(user.top_score(), 0)
 
+    def test_add_multiple_scores(self):
+        user = UserData("Leo", [10, 20])
+        self.assertEqual(user.top_score(), 20)
+        user.add_score(30)
+        user.add_score(40)
+        self.assertEqual(user.scores, [10, 20, 30, 40])
+        self.assertEqual(user.top_score(), 40)
+
+    def test_add_floating_scores(self):
+        user = UserData("Mia", [10.5, 20.5])
+        self.assertEqual(user.top_score(), 20.5)
+        user.add_score(30.5)
+        self.assertEqual(user.scores, [10.5, 20.5, 30.5])
+        self.assertEqual(user.top_score(), 30.5)
+
+    def test_add_scores_float_2_decimal(self):
+        user = UserData("Nina", [10.12, 20.34])
+        self.assertEqual(user.top_score(), 20.34)
+        user.add_score(20.35)
+        self.assertEqual(user.scores, [10.12, 20.34, 20.35])
+        self.assertEqual(user.top_score(), 20.35)
+
     def test_summarize_scores(self):
         users = [UserData("A", [10, 90]), UserData("B", [50, 50])]
         summary = summarize_scores(users)
