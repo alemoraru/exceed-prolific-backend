@@ -18,15 +18,16 @@ def evaluate_code(
 
     1) Syntax‐check the code.
     2) Copy user code and test suite to temp dir.
-    3) Run only the relevant unittest class for the snippet.
-    4) If errors are encountered, rephrase the error message using an LLM.
-    5) Return the evaluation status, rephrased error message, and test results.
+    3) Run the user code to check for runtime errors.
+    4) Run only the relevant unittest class for the snippet.
+    5) If errors are encountered, rephrase the error message using an LLM.
+    6) Return the evaluation status, rephrased error message, and test results.
 
     :param code: The user code to evaluate.
     :param snippet_id: The ID of the snippet to evaluate against.
     :return: A tuple containing:
-        - status: "success", "syntax_error", "test_failure", or "runtime_error"
-        - rephrased error message (if applicable)
+        - status: "success", "syntax_error", "runtime_error", or "test_failure"
+        - produced error message (if applicable)
         - number of tests passed (if applicable)
         - total number of tests (if applicable)
     """
@@ -65,11 +66,24 @@ def evaluate_code(
                 stderr=subprocess.STDOUT,
             )
         except subprocess.CalledProcessError as e:
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
+            # Syntax error when compiling the file, return the error
+            return "syntax_error", e.output.decode("utf-8"), None, None
+
+        # Run the file itself
+        try:
+            run_result = subprocess.run(
+                [sys.executable, user_code_path],
+                cwd=td,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
-            # Only return the raw error message, do not rephrase
-            return "syntax_error", orig_error, None, None
+            if run_result.returncode != 0:
+                # Runtime error when running the file
+                error_msg = run_result.stderr or run_result.stdout
+                return "runtime_error", error_msg, None, None
+        except Exception as e:
+            return "runtime_error", str(e), None, None
 
         # Run only the relevant test class in the relevant test file
         try:
@@ -86,24 +100,17 @@ def evaluate_code(
                 text=True,
                 timeout=10,
             )
-        except Exception:
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
-            )
-            # Only return the raw error message, do not rephrase
-            return "runtime_error", orig_error, None, None
+        except Exception as e:
+            # If there is an error running the unittest command
+            return "runtime_error", str(e), None, None
         if result.returncode == 0:
             # Parse output for test count
             passed, total = _parse_unittest_output(result.stdout, result.stderr)
             return "success", "", passed, total
         else:
-            print(result.stdout)  # For debugging purposes
             passed, total = _parse_unittest_output(result.stdout, result.stderr)
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
-            )
-            # Only return the raw error message, do not rephrase
-            return "test_failure", orig_error, passed, total
+            # Return the number of tests passed and total tests
+            return "test_failure", "", passed, total
 
 
 def _load_module(path: str, module_name: str) -> ModuleType:

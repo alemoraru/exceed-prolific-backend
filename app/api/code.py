@@ -76,7 +76,7 @@ async def submit_code_fix(submission: CodeSubmission, db: Session = Depends(get_
         )
 
     # Evaluate code (syntax + tests)
-    code_status, llm_error_msg, tests_passed, tests_total = evaluate_code(
+    code_status, error, tests_passed, tests_total = evaluate_code(
         submission.code, snippet_id
     )
 
@@ -87,6 +87,7 @@ async def submit_code_fix(submission: CodeSubmission, db: Session = Depends(get_
         attempt_number=attempt_number,
         code=submission.code,
         status=code_status,
+        error=error,
         tests_passed=tests_passed,
         tests_total=tests_total,
         time_taken_ms=submission.time_taken_ms,
@@ -97,8 +98,7 @@ async def submit_code_fix(submission: CodeSubmission, db: Session = Depends(get_
     return {
         "participant_id": pid,
         "snippet_id": snippet_id,
-        "status": code_status,
-        "error_msg": llm_error_msg,
+        "status": code_status
     }
 
 
