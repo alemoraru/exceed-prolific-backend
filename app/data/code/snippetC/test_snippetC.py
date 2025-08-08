@@ -23,9 +23,9 @@ class TestSnippetC(unittest.TestCase):
         scores = [50, 60, 70, 80]
         report = ScoreReport(scores)
         self.assertEqual(report.passing_percentage(), 75.0)
-        self.assertIn('Scores range from 0 to 100.', report.report())
-        self.assertIn('Average: 65.0', report.report())
-        self.assertIn('Passing: 75.0%', report.report())
+        self.assertIn("Scores range from 0 to 100.", report.report())
+        self.assertIn("Average: 65.0", report.report())
+        self.assertIn("Passing: 75.0%", report.report())
 
     def test_describe(self):
-        self.assertEqual(ScoreReport.describe(), 'Scores range from 0 to 100.')
+        self.assertEqual(ScoreReport.describe(), "Scores range from 0 to 100.")

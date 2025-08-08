@@ -10,7 +10,7 @@ class UserData:
 
     def top_score(self):
         """Returns the highest score."""
-        return maximum(self.scores)
+        return maximum(self.scores) if self.scores else 0
 
     def add_score(self, score):
         self.scores.append(score)

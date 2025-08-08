@@ -94,10 +94,11 @@ def evaluate_code(
             return "runtime_error", orig_error, None, None
         if result.returncode == 0:
             # Parse output for test count
-            passed, total = _parse_unittest_output(result.stdout)
+            passed, total = _parse_unittest_output(result.stdout, result.stderr)
             return "success", "", passed, total
         else:
-            passed, total = _parse_unittest_output(result.stdout)
+            print(result.stdout)  # For debugging purposes
+            passed, total = _parse_unittest_output(result.stdout, result.stderr)
             orig_code, orig_error = _load_original_code_and_error(
                 code_dir, snippet_file
             )
@@ -134,26 +135,31 @@ def _load_original_code_and_error(code_dir, snippet_file) -> Tuple[str, str]:
     return orig_code, orig_error
 
 
-def _parse_unittest_output(output: str) -> Tuple[Optional[int], Optional[int]]:
+def _parse_unittest_output(output: str, stderr: str = None) -> Tuple[Optional[int], Optional[int]]:
     """
-    Parse unittest output to extract number of passed and total tests.
-    :param output: The output string from unittest.
+    Parse unittest output (stdout and optionally stderr) to extract number of passed and total tests.
+    :param output: The output string from unittest stdout.
+    :param stderr: The output string from unittest stderr (optional).
     :return: A tuple containing the number of passed tests and total tests.
     """
+    # Combine stdout and stderr for parsing
+    combined = output
+    if stderr:
+        combined += "\n" + stderr
 
     # Look for lines like: 'Ran 3 tests in 0.001s'
-    m = re.search(r"Ran (\d+) tests?", output)
+    m = re.search(r"Ran (\d+) tests?", combined)
     total = int(m.group(1)) if m else None
     # Look for 'OK' or 'FAILED (failures=1)' etc.
-    if "OK" in output:
+    if "OK" in combined:
         passed = total
     else:
-        # Try to count failures/errors
-        fail_match = re.search(r"FAILED \((.*?)\)", output)
+        # Try to count failures/errors/skips
+        fail_match = re.search(r"FAILED \((.*?)\)", combined)
         failed = 0
         if fail_match:
             fail_str = fail_match.group(1)
-            # e.g. 'failures=1, errors=1'
+            # e.g. 'failures=1, errors=1, skipped=1'
             for part in fail_str.split(","):
                 if "=" in part:
                     failed += int(part.split("=")[1])
