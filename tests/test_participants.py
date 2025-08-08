@@ -380,6 +380,32 @@ class TestParticipants:
             assert response.json()["participant_id"] == "all_questions"
             assert response.json()["question_id"] == qid
 
+    def test_completion_redirect_non_existing_participant(self, client):
+        """Test completion redirect for a non-existing participant."""
+
+        response = client.get(
+            "/api/participants/completion-redirect",
+            params={"participant_id": "non_existing"},
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Participant not found"
+
+
+    def test_completion_redirect_not_completed(self, client):
+        """Test completion redirect fails if participant has not finished the study."""
+        # Register and consent
+        client.post(
+            "/api/participants/consent",
+            json={"participant_id": "redirect_not_completed", "consent": True},
+        )
+        # Do not set ended_at
+        response = client.get(
+            "/api/participants/completion-redirect",
+            params={"participant_id": "redirect_not_completed"},
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Participant has not completed the study yet."
+
 
 class TestSkillAssessment:
     """Test suite for skill assessment function."""

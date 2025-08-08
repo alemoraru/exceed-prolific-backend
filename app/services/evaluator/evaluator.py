@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import ast
 from types import ModuleType
 from typing import Optional, Tuple
 
@@ -26,7 +27,7 @@ def evaluate_code(
     :param code: The user code to evaluate.
     :param snippet_id: The ID of the snippet to evaluate against.
     :return: A tuple containing:
-        - status: "success", "syntax_error", "runtime_error", or "test_failure"
+        - status: "success", "syntax_error", "runtime_error", "test_failure", "not_found", or "high_risk_code"
         - produced error message (if applicable)
         - number of tests passed (if applicable)
         - total number of tests (if applicable)
@@ -58,6 +59,10 @@ def evaluate_code(
         test_src = os.path.join(code_dir, test_file)
         test_dst = os.path.join(td, os.path.basename(test_file))
         shutil.copyfile(test_src, test_dst)
+
+        # Malicious code detection
+        if detect_malicious_code(code):
+            return "high_risk_code", "Malicious or high-risk code detected.", None, None
 
         # Syntax check user code
         try:
@@ -111,6 +116,77 @@ def evaluate_code(
             passed, total = _parse_unittest_output(result.stdout, result.stderr)
             # Return the number of tests passed and total tests
             return "test_failure", "", passed, total
+
+
+def detect_malicious_code(code: str) -> bool:
+    """
+    Scan code using AST to detect potentially malicious usage.
+    Only blocks os.system calls, allows other os usages (including os.path.exists).
+    :param code: The user code to scan.
+    :return: True if high-risk code is detected, else False.
+    """
+    try:
+        tree = ast.parse(code)
+    except Exception:
+        return False
+
+    risky_names = {
+        "sys",
+        "subprocess",
+        "shutil",
+        "socket",
+        "threading",
+        "multiprocessing",
+        "ctypes",
+        "pickle",
+        "eval",
+        "exec",
+        "compile",
+        "open",
+        "__import__",
+    }
+
+    for node in ast.walk(tree):
+        # Detect risky imports (allow os completely)
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modname = alias.name.split(".")[0]
+                if modname != "os" and modname in risky_names:
+                    return True
+        if isinstance(node, ast.ImportFrom):
+            if node.module:
+                modname = node.module.split(".")[0]
+                if modname != "os" and modname in risky_names:
+                    return True
+
+        # Detect risky calls
+        if isinstance(node, ast.Call):
+            # Allow os.path.exists only
+            if isinstance(node.func, ast.Attribute):
+                # Allow: os.path.exists(...)
+                if (
+                    isinstance(node.func.value, ast.Attribute)
+                    and isinstance(node.func.value.value, ast.Name)
+                    and node.func.value.value.id == "os"
+                    and node.func.value.attr == "path"
+                    and node.func.attr == "exists"
+                ):
+                    continue
+
+                # Block: os.system(...)
+                if isinstance(node.func.value, ast.Name) and node.func.value.id == "os":
+                    if node.func.attr == "system":
+                        return True
+
+                # Block other risky attributes (e.g., subprocess.call)
+                full_name = f"{getattr(node.func.value, 'id', '')}.{node.func.attr}"
+                if node.func.attr in risky_names or full_name in risky_names:
+                    return True
+
+            if isinstance(node.func, ast.Name) and node.func.id in risky_names:
+                return True
+
+    return False
 
 
 def _load_module(path: str, module_name: str) -> ModuleType:
