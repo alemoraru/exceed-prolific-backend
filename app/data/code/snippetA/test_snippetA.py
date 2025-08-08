@@ -76,6 +76,7 @@ class TestSnippetA(unittest.TestCase):
             os.remove(logname)
         add_book(logname, "Book Y")
         self.assertEqual(count_books(logname), 1)
+        os.remove(logname)
 
     def test_preview_after_log_deleted(self):
         add_book(self.log, "Book Z")

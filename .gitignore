@@ -5,3 +5,4 @@ __pycache__
 **/test_api.db
 .coverage
 app/data/test_code/
+*.log
