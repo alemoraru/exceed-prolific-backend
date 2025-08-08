@@ -32,3 +32,5 @@ class ModelType(Enum):
     OLLAMA_QWEN2_5_CODER_7_B = "qwen2.5-coder:7b"
     OLLAMA_QWEN2_5_CODER_14_B = "qwen2.5-coder:14b"
     OLLAMA_DEEPSEEK_CODER_6_7_B = "deepseek-coder:6.7b"
+    OLLAMA_QWEN2_5_7_B = "qwen2.5:7b"
+    OLLAMA_GRANITE3_3_8B = "granite3.3:8b"
