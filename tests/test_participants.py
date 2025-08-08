@@ -390,7 +390,6 @@ class TestParticipants:
         assert response.status_code == 404
         assert response.json()["detail"] == "Participant not found"
 
-
     def test_completion_redirect_not_completed(self, client):
         """Test completion redirect fails if participant has not finished the study."""
         # Register and consent
@@ -404,7 +403,9 @@ class TestParticipants:
             params={"participant_id": "redirect_not_completed"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "Participant has not completed the study yet."
+        assert (
+            response.json()["detail"] == "Participant has not completed the study yet."
+        )
 
 
 class TestSkillAssessment:
