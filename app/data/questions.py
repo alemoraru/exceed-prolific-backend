@@ -111,11 +111,11 @@ QUESTIONS: List[Question] = [
     {
         "id": "q7",
         "qualtrics_id": "Q9.5",
-        "question": "You're writing a program that uses a dictionary to store user preferences. You try to access a key that you know exists in the dictionary, but your code throws a KeyError. What is the MOST likely reason for this, given the limited context?",
+        "question": "You're writing a program that uses a dictionary to store user preferences. You try to access a key that is known to exist in the dictionary, but your code throws a KeyError. What is the MOST likely reason for this, given the limited context?",
         "code": None,
         "error": None,
         "options": [
-            "The key might have been altered or removed elsewhere in the code",
+            "You may have mistakenly assumed the key was present, but it was never actually added to the dictionary.",
             "The key is actually a string, but you’re trying to access it with an integer",
             'There\'s a typo in the key you are trying to access (e.g., `"User"` vs `"user"`), or the case sensitivity is different than expected',
             "Dictionaries can sometimes fail to locate keys due to internal hashing bugs or collisions",
