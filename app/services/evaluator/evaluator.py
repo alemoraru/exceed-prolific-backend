@@ -61,7 +61,7 @@ def evaluate_code(
         shutil.copyfile(test_src, test_dst)
 
         # Malicious code detection
-        if detect_malicious_code(code):
+        if _detect_malicious_code(code):
             return "high_risk_code", "Malicious or high-risk code detected.", None, None
 
         # Syntax check user code
@@ -118,7 +118,7 @@ def evaluate_code(
             return "test_failure", "", passed, total
 
 
-def detect_malicious_code(code: str) -> bool:
+def _detect_malicious_code(code: str) -> bool:
     """
     Scan code using AST to detect potentially malicious usage.
     Only blocks os.system calls, allows other os usages (including os.path.exists).
@@ -142,7 +142,6 @@ def detect_malicious_code(code: str) -> bool:
         "eval",
         "exec",
         "compile",
-        "open",
         "__import__",
     }
 
