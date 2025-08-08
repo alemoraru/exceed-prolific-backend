@@ -25,7 +25,6 @@ class TestSnippetD(unittest.TestCase):
     def test_most_similar_pair(self):
         vectors = fixed_vectors()
         pair = most_similar_pair(vectors)
-
         self.assertIsInstance(pair, tuple)
         self.assertEqual(len(pair), 2)
         # Check that returned indices are valid
