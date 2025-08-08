@@ -24,7 +24,8 @@ message feedback, and event logging.
 
 - Modular FastAPI routers for participants, code fix submissions, error message feedback, and events
 - SQLAlchemy models for `participants`, `code_submissions`, `errors`, and `events`
-- Evaluator service for syntax and semantic code checks
+- Evaluator service for syntax, runtime, and semantic code checks
+- Evaluator service also checks for malicious code submissions
 - LLM-based error rephrasing for educational feedback
 - Data folder for code snippets, test suites, and error messages
 
