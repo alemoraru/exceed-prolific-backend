@@ -1,83 +1,90 @@
 import unittest
-
-from snippetB import (
-    SIMULATED_CONFIG,
-    SessionManager,
-    UserProfile,
-    load_user_data_from_string,
-)
+from snippetB import UserData, summarize_scores
 
 
 class TestSnippetB(unittest.TestCase):
-    """Unit tests for the UserProfile class in snippetB.py."""
+    def test_scores_are_stored(self):
+        user = UserData("Alice", [10, 30, 60])
+        self.assertEqual(user.scores, [10, 30, 60])
 
-    def test_missing_timeout_key(self):
-        # Profile without 'timeout' key should raise KeyError
-        user_data = {"name": "Alice", "email": "alice@example.com", "age": 30}
-        user = UserProfile(user_data)
+    def test_top_score(self):
+        user = UserData("Bob", [5, 15, 80])
+        self.assertEqual(user.top_score(), 80)
 
-    def test_with_timeout_key(self):
-        user_data = {"name": "Bob", "email": "", "age": 25, "timeout": 300}
-        user = UserProfile(user_data)
-        # Should not raise
-        user.display_timeout()
+    def test_top_score_empty(self):
+        user = UserData("Dave", [])
+        self.assertEqual(user.top_score(), 0)
 
-    def test_session_manager_starts_with_timeout(self):
-        user_data = {"name": "Bob", "email": "", "age": 25, "timeout": 120}
-        user = UserProfile(user_data)
-        manager = SessionManager(user)
-        # Should not raise
-        manager.start_session()
+    def test_top_score_negative(self):
+        user = UserData("Frank", [-10, -20, -5])
+        self.assertEqual(user.top_score(), -5)
 
-    def test_load_user_data_from_string(self):
-        data = load_user_data_from_string(SIMULATED_CONFIG)
-        self.assertEqual(data["name"], "Charlie")
-        self.assertEqual(data["email"], "charlie@example.com")
-        self.assertEqual(data["age"], 28)
+    def test_top_score_single(self):
+        user = UserData("Eve", [42])
+        self.assertEqual(user.top_score(), 42)
 
-    def test_display_timeout_with_string_timeout(self):
-        user_data = {
-            "name": "Dana",
-            "email": "dana@example.com",
-            "age": 22,
-            "timeout": "150",
-        }
-        user = UserProfile(user_data)
-        user.display_timeout()
+    def test_top_score_mixed(self):
+        user = UserData("Grace", [10, -5, 20])
+        self.assertEqual(user.top_score(), 20)
 
-    def test_profile_age_type(self):
-        user_data = {"name": "Alice", "email": "alice@example.com", "age": 30}
-        user = UserProfile(user_data)
-        self.assertIsInstance(user.data["age"], int)
+    def test_add_score(self):
+        user = UserData("Carol", [20, 30])
+        self.assertEqual(user.top_score(), 30)
+        user.add_score(50)
+        self.assertEqual(user.scores, [20, 30, 50])
+        self.assertEqual(user.top_score(), 50)
 
-    def test_profile_email_type(self):
-        user_data = {"name": "Alice", "email": "alice@example.com", "age": 30}
-        user = UserProfile(user_data)
-        self.assertIsInstance(user.data["email"], str)
+    def test_add_score_empty(self):
+        user = UserData("Hank", [])
+        user.add_score(100)
+        self.assertEqual(user.scores, [100])
+        self.assertEqual(user.top_score(), 100)
 
-    def test_profile_missing_name(self):
-        user_data = {"email": "alice@example.com", "age": 30}
-        user = UserProfile(user_data)
-        self.assertNotIn("name", user.data)
+    def test_add_score_negative(self):
+        user = UserData("Ivy", [10, 20])
+        self.assertEqual(user.top_score(), 20)
+        user.add_score(-10)
+        self.assertEqual(user.scores, [10, 20, -10])
+        self.assertEqual(user.top_score(), 20)
 
-    def test_profile_with_extra_fields(self):
-        user_data = {
-            "name": "Alice",
-            "email": "alice@example.com",
-            "age": 30,
-            "timeout": 100,
-            "role": "admin",
-        }
-        user = UserProfile(user_data)
-        self.assertIn("role", user.data)
-        self.assertEqual(user.data["role"], "admin")
+    def test_add_duplicate_score(self):
+        user = UserData("Jack", [10, 20])
+        self.assertEqual(user.top_score(), 20)
+        user.add_score(20)
+        self.assertEqual(user.scores, [10, 20, 20])
+        self.assertEqual(user.top_score(), 20)
 
-    def test_profile_age_negative(self):
-        user_data = {"name": "Alice", "email": "alice@example.com", "age": -1}
-        user = UserProfile(user_data)
-        self.assertLess(user.data["age"], 0)
+    def test_add_zero_score(self):
+        user = UserData("Kate", [])
+        self.assertEqual(user.top_score(), 0)
+        user.add_score(0)
+        self.assertEqual(user.scores, [0])
+        self.assertEqual(user.top_score(), 0)
 
-    def test_display_timeout_type(self):
-        user_data = {"name": "Alice", "email": "alice@example.com", "age": 30}
-        user = UserProfile(user_data)
-        self.assertEqual(user.get_timeout(), 600)
+    def test_add_multiple_scores(self):
+        user = UserData("Leo", [10, 20])
+        self.assertEqual(user.top_score(), 20)
+        user.add_score(30)
+        user.add_score(40)
+        self.assertEqual(user.scores, [10, 20, 30, 40])
+        self.assertEqual(user.top_score(), 40)
+
+    def test_add_floating_scores(self):
+        user = UserData("Mia", [10.5, 20.5])
+        self.assertEqual(user.top_score(), 20.5)
+        user.add_score(30.5)
+        self.assertEqual(user.scores, [10.5, 20.5, 30.5])
+        self.assertEqual(user.top_score(), 30.5)
+
+    def test_add_scores_float_2_decimal(self):
+        user = UserData("Nina", [10.12, 20.34])
+        self.assertEqual(user.top_score(), 20.34)
+        user.add_score(20.35)
+        self.assertEqual(user.scores, [10.12, 20.34, 20.35])
+        self.assertEqual(user.top_score(), 20.35)
+
+    def test_summarize_scores(self):
+        users = [UserData("A", [10, 90]), UserData("B", [50, 50])]
+        summary = summarize_scores(users)
+        self.assertEqual(summary["A"], 90)
+        self.assertEqual(summary["B"], 50)

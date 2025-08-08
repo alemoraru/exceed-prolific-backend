@@ -30,6 +30,7 @@ class CodeSubmission(Base):
     attempt_number = Column(Integer, primary_key=True)
     code = Column(String)
     status = Column(String)
+    error = Column(String, nullable=True)
     tests_passed = Column(Integer, nullable=True)
     tests_total = Column(Integer, nullable=True)
     time_taken_ms = Column(Integer, nullable=True)

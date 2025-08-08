@@ -1,47 +1,88 @@
 import unittest
-
-from snippetC import ScoreTracker
+from snippetC import generate_scores, average, filter_passing, ScoreReport
 
 
 class TestSnippetC(unittest.TestCase):
-    """Unit tests for the ScoreTracker class in snippetC.py."""
+    def test_generate_scores(self):
+        scores = generate_scores(5)
+        self.assertEqual(len(scores), 5)
+        for s in scores:
+            self.assertTrue(0 <= s <= 100)
 
-    def test_index_error(self):
-        tracker = ScoreTracker()
-        # The error is triggered because len(self.scores) is out of bounds
-        with self.assertRaises(IndexError):
-            tracker.print_last_score()
+    def test_generate_scores_edge_cases(self):
+        self.assertEqual(generate_scores(0), [])
+        scores = generate_scores(1)
+        self.assertEqual(len(scores), 1)
+        self.assertTrue(0 <= scores[0] <= 100)
 
-    def test_scores_length(self):
-        tracker = ScoreTracker()
-        self.assertEqual(len(tracker.scores), 4)
+    def test_average(self):
+        self.assertEqual(average([10, 20, 30]), 20)
+        self.assertEqual(average([]), 0)
 
-    def test_scores_are_ints(self):
-        tracker = ScoreTracker()
-        self.assertTrue(all(isinstance(x, int) for x in tracker.scores))
+    def test_average_negative_and_float(self):
+        self.assertEqual(average([-10, 10]), 0)
+        self.assertAlmostEqual(average([1.5, 2.5, 3.5]), 2.5)
 
-    def test_print_last_score_valid(self):
-        tracker = ScoreTracker()
-        tracker.scores = [10, 20, 30, 40]
-        # Should print 40, but we just check no exception is raised
-        try:
-            tracker.print_last_score()
-        except Exception as e:
-            self.fail(f"print_last_score() raised {type(e)} unexpectedly!")
+    def test_filter_passing(self):
+        scores = [55, 60, 75, 40]
+        passing = filter_passing(scores)
+        self.assertEqual(passing, [60, 75])
+        self.assertEqual(filter_passing(scores, threshold=70), [75])
 
-    def test_scores_with_negative_values(self):
-        tracker = ScoreTracker()
-        tracker.scores = [-5, -10, -15, -20]
-        self.assertTrue(all(x < 0 for x in tracker.scores))
+    def test_filter_passing_all_failing(self):
+        scores = [10, 20, 30]
+        self.assertEqual(filter_passing(scores), [])
 
-    def test_scores_with_mixed_types(self):
-        tracker = ScoreTracker()
-        tracker.scores = [10, "20", 30, 40]
-        with self.assertRaises(Exception):
-            tracker.print_last_score()
+    def test_filter_passing_all_passing(self):
+        scores = [60, 70, 80]
+        self.assertEqual(filter_passing(scores), scores)
 
-    def test_empty_scores(self):
-        tracker = ScoreTracker()
-        tracker.scores = []
-        with self.assertRaises(IndexError):
-            tracker.print_last_score()
+    def test_filter_passing_custom_threshold(self):
+        scores = [55, 60, 75, 40]
+        self.assertEqual(filter_passing(scores, threshold=75), [75])
+        self.assertEqual(filter_passing(scores, threshold=100), [])
+
+    def test_score_report(self):
+        scores = [50, 60, 70, 80]
+        report = ScoreReport(scores)
+        self.assertEqual(report.passing_percentage(), 75.0)
+        self.assertIn("Scores range from 0 to 100.", report.report())
+        self.assertIn("Average: 65.0", report.report())
+        self.assertIn("Passing: 75.0%", report.report())
+
+    def test_score_report_empty_scores(self):
+        report = ScoreReport([])
+        self.assertEqual(report.passing_percentage(), 0)
+        self.assertIn("Scores range from 0 to 100.", report.report())
+        self.assertIn("Average: 0.0", report.report())
+        self.assertIn("Passing: 0.0%", report.report())
+
+    def test_score_report_all_passing(self):
+        scores = [100, 90, 80]
+        report = ScoreReport(scores)
+        self.assertEqual(report.passing_percentage(), 100.0)
+        self.assertIn("Passing: 100.0%", report.report())
+
+    def test_score_report_all_failing(self):
+        scores = [10, 20, 30]
+        report = ScoreReport(scores)
+        self.assertEqual(report.passing_percentage(), 0.0)
+        self.assertIn("Passing: 0.0%", report.report())
+
+    def test_score_negative_threshold(self):
+        scores = [50, 60, 70, 80]
+        report = ScoreReport(scores)
+        self.assertEqual(filter_passing(scores, threshold=-10), scores)
+        # For passing, the default threshold is 60 always, so the 50 score should not be counted
+        self.assertIn("Passing: 75.0%", report.report())
+
+    def test_score_report_describe(self):
+        self.assertEqual(ScoreReport.describe(), "Scores range from 0 to 100.")
+
+    def test_score_report_report_format(self):
+        scores = [60, 70]
+        report = ScoreReport(scores)
+        output = report.report()
+        self.assertTrue(output.startswith("Scores range from 0 to 100."))
+        self.assertIn("Average: 65.0", output)
+        self.assertIn("Passing: 100.0%", output)

@@ -19,8 +19,10 @@ SUPPORTED_MODELS = {
     ModelType.OLLAMA_QWEN3_14B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_3_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_7_B.value: "ollama",
+    ModelType.OLLAMA_QWEN2_5_7_B.value: "ollama",
     ModelType.OLLAMA_QWEN2_5_CODER_14_B.value: "ollama",
     ModelType.OLLAMA_DEEPSEEK_CODER_6_7_B.value: "ollama",
+    ModelType.OLLAMA_GRANITE3_3_8B.value: "ollama",
 }
 
 

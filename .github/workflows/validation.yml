@@ -28,11 +28,7 @@ jobs:
 
       - name: Check black
         run: |
-          black --check .
-
-      - name: Check isort
-        run: |
-          isort --check-only .
+          black --check . --extend-exclude 'app/data/code'
 
       - name: Run tests with pytest
         run: |

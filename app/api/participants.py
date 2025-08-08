@@ -83,6 +83,39 @@ class ParticipantExistsResponse(BaseModel):
     exists: bool
 
 
+class CompletionRedirectResponse(BaseModel):
+    """Model for the response of completion redirect."""
+
+    url: str
+
+
+@router.get("/completion-redirect", response_model=CompletionRedirectResponse)
+async def completion_redirect(participant_id: str, db: Session = Depends(get_db)):
+    """
+    Redirect to the completion page after all questions have been answered.
+    :param participant_id: The ID of the participant completing the study.
+    :param db: Database session dependency.
+    :return: A message indicating successful completion.
+    """
+    participant = db.get(models.Participant, participant_id)
+    if not participant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
+    if not participant.consent:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Consent is required to continue.",
+        )
+    if not participant.ended_at:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Participant has not completed the study yet.",
+        )
+
+    return {"url": "https://app.prolific.com/submissions/complete?cc=C1L0KIZE"}
+
+
 @router.post("/participant-exists", response_model=ParticipantExistsResponse)
 async def participant_exists(
     request: ParticipantExistsRequest, db: Session = Depends(get_db)

@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import ast
 from types import ModuleType
 from typing import Optional, Tuple
 
@@ -18,15 +19,16 @@ def evaluate_code(
 
     1) Syntax‐check the code.
     2) Copy user code and test suite to temp dir.
-    3) Run only the relevant unittest class for the snippet.
-    4) If errors are encountered, rephrase the error message using an LLM.
-    5) Return the evaluation status, rephrased error message, and test results.
+    3) Run the user code to check for runtime errors.
+    4) Run only the relevant unittest class for the snippet.
+    5) If errors are encountered, rephrase the error message using an LLM.
+    6) Return the evaluation status, rephrased error message, and test results.
 
     :param code: The user code to evaluate.
     :param snippet_id: The ID of the snippet to evaluate against.
     :return: A tuple containing:
-        - status: "success", "syntax_error", "test_failure", or "runtime_error"
-        - rephrased error message (if applicable)
+        - status: "success", "syntax_error", "runtime_error", "test_failure", "not_found", or "high_risk_code"
+        - produced error message (if applicable)
         - number of tests passed (if applicable)
         - total number of tests (if applicable)
     """
@@ -58,6 +60,10 @@ def evaluate_code(
         test_dst = os.path.join(td, os.path.basename(test_file))
         shutil.copyfile(test_src, test_dst)
 
+        # Malicious code detection
+        if detect_malicious_code(code):
+            return "high_risk_code", "Malicious or high-risk code detected.", None, None
+
         # Syntax check user code
         try:
             subprocess.check_output(
@@ -65,11 +71,24 @@ def evaluate_code(
                 stderr=subprocess.STDOUT,
             )
         except subprocess.CalledProcessError as e:
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
+            # Syntax error when compiling the file, return the error
+            return "syntax_error", e.output.decode("utf-8"), None, None
+
+        # Run the file itself
+        try:
+            run_result = subprocess.run(
+                [sys.executable, user_code_path],
+                cwd=td,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
-            # Only return the raw error message, do not rephrase
-            return "syntax_error", orig_error, None, None
+            if run_result.returncode != 0:
+                # Runtime error when running the file
+                error_msg = run_result.stderr or run_result.stdout
+                return "runtime_error", error_msg, None, None
+        except Exception as e:
+            return "runtime_error", str(e), None, None
 
         # Run only the relevant test class in the relevant test file
         try:
@@ -86,23 +105,88 @@ def evaluate_code(
                 text=True,
                 timeout=10,
             )
-        except Exception:
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
-            )
-            # Only return the raw error message, do not rephrase
-            return "runtime_error", orig_error, None, None
+        except Exception as e:
+            # If there is an error running the unittest command
+            return "runtime_error", str(e), None, None
         if result.returncode == 0:
             # Parse output for test count
-            passed, total = _parse_unittest_output(result.stdout)
+            passed, total = _parse_unittest_output(result.stdout, result.stderr)
             return "success", "", passed, total
         else:
-            passed, total = _parse_unittest_output(result.stdout)
-            orig_code, orig_error = _load_original_code_and_error(
-                code_dir, snippet_file
-            )
-            # Only return the raw error message, do not rephrase
-            return "test_failure", orig_error, passed, total
+            passed, total = _parse_unittest_output(result.stdout, result.stderr)
+            # Return the number of tests passed and total tests
+            return "test_failure", "", passed, total
+
+
+def detect_malicious_code(code: str) -> bool:
+    """
+    Scan code using AST to detect potentially malicious usage.
+    Only blocks os.system calls, allows other os usages (including os.path.exists).
+    :param code: The user code to scan.
+    :return: True if high-risk code is detected, else False.
+    """
+    try:
+        tree = ast.parse(code)
+    except Exception:
+        return False
+
+    risky_names = {
+        "sys",
+        "subprocess",
+        "shutil",
+        "socket",
+        "threading",
+        "multiprocessing",
+        "ctypes",
+        "pickle",
+        "eval",
+        "exec",
+        "compile",
+        "open",
+        "__import__",
+    }
+
+    for node in ast.walk(tree):
+        # Detect risky imports (allow os completely)
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modname = alias.name.split(".")[0]
+                if modname != "os" and modname in risky_names:
+                    return True
+        if isinstance(node, ast.ImportFrom):
+            if node.module:
+                modname = node.module.split(".")[0]
+                if modname != "os" and modname in risky_names:
+                    return True
+
+        # Detect risky calls
+        if isinstance(node, ast.Call):
+            # Allow os.path.exists only
+            if isinstance(node.func, ast.Attribute):
+                # Allow: os.path.exists(...)
+                if (
+                    isinstance(node.func.value, ast.Attribute)
+                    and isinstance(node.func.value.value, ast.Name)
+                    and node.func.value.value.id == "os"
+                    and node.func.value.attr == "path"
+                    and node.func.attr == "exists"
+                ):
+                    continue
+
+                # Block: os.system(...)
+                if isinstance(node.func.value, ast.Name) and node.func.value.id == "os":
+                    if node.func.attr == "system":
+                        return True
+
+                # Block other risky attributes (e.g., subprocess.call)
+                full_name = f"{getattr(node.func.value, 'id', '')}.{node.func.attr}"
+                if node.func.attr in risky_names or full_name in risky_names:
+                    return True
+
+            if isinstance(node.func, ast.Name) and node.func.id in risky_names:
+                return True
+
+    return False
 
 
 def _load_module(path: str, module_name: str) -> ModuleType:
@@ -134,26 +218,33 @@ def _load_original_code_and_error(code_dir, snippet_file) -> Tuple[str, str]:
     return orig_code, orig_error
 
 
-def _parse_unittest_output(output: str) -> Tuple[Optional[int], Optional[int]]:
+def _parse_unittest_output(
+    output: str, stderr: str = None
+) -> Tuple[Optional[int], Optional[int]]:
     """
-    Parse unittest output to extract number of passed and total tests.
-    :param output: The output string from unittest.
+    Parse unittest output (stdout and optionally stderr) to extract number of passed and total tests.
+    :param output: The output string from unittest stdout.
+    :param stderr: The output string from unittest stderr (optional).
     :return: A tuple containing the number of passed tests and total tests.
     """
+    # Combine stdout and stderr for parsing
+    combined = output
+    if stderr:
+        combined += "\n" + stderr
 
     # Look for lines like: 'Ran 3 tests in 0.001s'
-    m = re.search(r"Ran (\d+) tests?", output)
+    m = re.search(r"Ran (\d+) tests?", combined)
     total = int(m.group(1)) if m else None
     # Look for 'OK' or 'FAILED (failures=1)' etc.
-    if "OK" in output:
+    if "OK" in combined:
         passed = total
     else:
-        # Try to count failures/errors
-        fail_match = re.search(r"FAILED \((.*?)\)", output)
+        # Try to count failures/errors/skips
+        fail_match = re.search(r"FAILED \((.*?)\)", combined)
         failed = 0
         if fail_match:
             fail_str = fail_match.group(1)
-            # e.g. 'failures=1, errors=1'
+            # e.g. 'failures=1, errors=1, skipped=1'
             for part in fail_str.split(","):
                 if "=" in part:
                     failed += int(part.split("=")[1])

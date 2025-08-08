@@ -1,101 +1,104 @@
 import unittest
-
-from snippetA import SalesProcessor, SalesRecord
+import os
+from snippetA import BookShelf, add_book, count_books
 
 
 class TestSnippetA(unittest.TestCase):
-    """Unit tests for the SalesProcessor class in snippetA.py."""
+    def setUp(self):
+        self.log = "test_books.log"
+        # Ensure log is clean
+        if os.path.exists(self.log):
+            os.remove(self.log)
 
-    def test_sales_data_types(self):
-        """Test that sales_data contains SalesRecord objects."""
-        processor = SalesProcessor()
-        self.assertTrue(all(isinstance(x, SalesRecord) for x in processor.sales_data))
+    def tearDown(self):
+        if os.path.exists(self.log):
+            os.remove(self.log)
 
-    def test_sales_data_values(self):
-        """Test that sales_data contains expected values."""
-        processor = SalesProcessor()
-        self.assertEqual(
-            [r.amount for r in processor.sales_data], ["100", 200, "150.5", 175]
-        )
+    def test_add_and_count_books(self):
+        add_book(self.log, "Book One")
+        add_book(self.log, "Book Two")
+        self.assertEqual(count_books(self.log), 2)
 
-    def test_clean_sales_data_conversion_and_discard(self):
-        """Test that clean_sales_data converts valid amounts and discards invalid ones."""
-        processor = SalesProcessor()
-        cleaned = processor.clean_sales_data()
-        # '100' and '150.5' should be converted to float, 200 and 175 as float, all valid
-        self.assertEqual(cleaned, [100.0, 200.0, 150.5, 175.0])
+    def test_preview(self):
+        add_book(self.log, "Book One")
+        add_book(self.log, "Book Two")
+        shelf = BookShelf(self.log)
+        preview = shelf.preview()
+        self.assertIn("Book One", preview)
+        self.assertIn("Book Two", preview)
 
-    def test_clean_sales_data_with_invalid(self):
-        """Test that clean_sales_data discards invalid amounts."""
-        processor = SalesProcessor()
-        processor.sales_data.append(SalesRecord("not_a_number"))
-        cleaned = processor.clean_sales_data()
-        self.assertEqual(cleaned, [100.0, 200.0, 150.5, 175.0])
+    def test_summary(self):
+        add_book(self.log, "Book One")
+        shelf = BookShelf(self.log)
+        self.assertEqual(shelf.summary(), "Books logged: 1")
 
-    def test_total_sales_sum(self):
-        """Test that total_sales returns the correct sum of cleaned sales data."""
-        processor = SalesProcessor()
-        self.assertAlmostEqual(processor.total_sales(), 625.5)
+    def test_preview_no_log(self):
+        shelf = BookShelf("nonexistent.log")
+        self.assertEqual(shelf.preview(), "No log found.")
 
-    def test_total_sales_empty(self):
-        """Test that total_sales returns 0 when there are no sales records."""
-        processor = SalesProcessor()
-        processor.sales_data = []
-        self.assertEqual(processor.total_sales(), 0)
+    def test_add_book_empty_title(self):
+        add_book(self.log, "")
+        self.assertEqual(count_books(self.log), 1)
+        shelf = BookShelf(self.log)
+        self.assertIn("", shelf.preview())
 
-    def test_total_sales_with_all_invalid(self):
-        """Test that total_sales returns 0 when all sales records are invalid."""
-        processor = SalesProcessor()
-        processor.sales_data = [SalesRecord("foo"), SalesRecord("bar")]
-        self.assertEqual(processor.total_sales(), 0)
+    def test_add_book_duplicate_titles(self):
+        add_book(self.log, "Book X")
+        add_book(self.log, "Book X")
+        self.assertEqual(count_books(self.log), 2)
 
-    def test_add_sales_record(self):
-        """Test that add_sales_record correctly adds a SalesRecord to sales_data."""
-        processor = SalesProcessor()
-        processor.add_sales_record(SalesRecord(50))
-        self.assertIn(50, [r.amount for r in processor.sales_data])
+    def test_count_books_empty_log(self):
+        open(self.log, "w").close()
+        self.assertEqual(count_books(self.log), 0)
 
-    def test_clean_sales_data_handles_mixed_types(self):
-        """Test that clean_sales_data handles mixed types and discards invalid ones."""
-        processor = SalesProcessor()
-        processor.sales_data.extend(
-            [
-                SalesRecord("300"),
-                SalesRecord("400.25"),
-                SalesRecord(500),
-                SalesRecord("not_a_number"),
-            ]
-        )
-        cleaned = processor.clean_sales_data()
-        # '100', '300' are digit strings, '150.5', '400.25' are valid floats, 200, 175, 500 are ints/floats, 'not_a_number' is discarded
-        self.assertEqual(cleaned, [100.0, 200.0, 150.5, 175.0, 300.0, 400.25, 500.0])
+    def test_preview_more_than_two_books(self):
+        add_book(self.log, "Book 1")
+        add_book(self.log, "Book 2")
+        add_book(self.log, "Book 3")
+        shelf = BookShelf(self.log)
+        preview = shelf.preview()
+        self.assertIn("Book 1", preview)
+        self.assertIn("Book 2", preview)
+        self.assertNotIn("Book 3", preview)
+        self.assertEqual(count_books(self.log), 3)
 
-    def test_clean_sales_data_discards_invalid(self):
-        """Test that clean_sales_data discards records that cannot be converted to float."""
-        processor = SalesProcessor()
-        processor.sales_data = [
-            SalesRecord("foo"),
-            SalesRecord("bar"),
-            SalesRecord("123abc"),
-        ]
-        cleaned = processor.clean_sales_data()
-        self.assertEqual(cleaned, [])
+    def test_summary_no_books(self):
+        self.assertEqual(BookShelf(self.log).summary(), "Books logged: 0")
 
-    def test_total_sales_with_mixed_and_invalid(self):
-        processor = SalesProcessor()
-        processor.sales_data.extend(
-            [SalesRecord("300"), SalesRecord("not_a_number"), SalesRecord(50.5)]
-        )
-        self.assertAlmostEqual(processor.total_sales(), 625.5 + 300.0 + 50.5)
+    def test_summary_multiple_books(self):
+        for i in range(5):
+            add_book(self.log, f"Book {i}")
+        self.assertEqual(BookShelf(self.log).summary(), "Books logged: 5")
 
-    def test_total_sales_with_only_invalid(self):
-        """Test that total_sales returns 0 when all sales records are invalid."""
-        processor = SalesProcessor()
-        processor.sales_data = [SalesRecord("foo"), SalesRecord("bar")]
-        self.assertEqual(processor.total_sales(), 0)
+    def test_add_book_nonexistent_log(self):
+        logname = "nonexistent2.log"
+        if os.path.exists(logname):
+            os.remove(logname)
+        add_book(logname, "Book Y")
+        self.assertEqual(count_books(logname), 1)
+        os.remove(logname)
 
-    def test_total_sales_with_empty_list(self):
-        """Test that total_sales returns 0 when sales_data is empty."""
-        processor = SalesProcessor()
-        processor.sales_data = []
-        self.assertEqual(processor.total_sales(), 0)
+    def test_preview_after_log_deleted(self):
+        add_book(self.log, "Book Z")
+        os.remove(self.log)
+        shelf = BookShelf(self.log)
+        self.assertEqual(shelf.preview(), "No log found.")
+
+    def test_add_book_special_characters(self):
+        title = "Book!@#$%^&*()_+"
+        add_book(self.log, title)
+        shelf = BookShelf(self.log)
+        self.assertIn(title, shelf.preview())
+
+    def test_preview_malformed_lines(self):
+        with open(self.log, "w") as f:
+            f.write("Malformed line\nAnother bad line\n")
+        shelf = BookShelf(self.log)
+        preview = shelf.preview()
+        self.assertIn("Malformed line", preview)
+        self.assertIn("Another bad line", preview)
+
+    def test_add_and_count_large_number_of_books(self):
+        for i in range(100):
+            add_book(self.log, f"Book {i}")
+        self.assertEqual(count_books(self.log), 100)

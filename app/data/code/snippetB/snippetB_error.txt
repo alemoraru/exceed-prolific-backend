@@ -1,12 +1,11 @@
 Traceback (most recent call last):
-  File "main.py", line 59, in <module>
-    main()
-  File "main.py", line 55, in main
-    manager.start_session()
-  File "main.py", line 41, in start_session
-    timeout = self.profile.get_timeout()
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "main.py", line 25, in get_timeout
-    return int(self.data["timeout"])
-               ~~~~~~~~~^^^^^^^^^^^
-KeyError: 'timeout'
+  File "main.py", line 26, in <module>
+    summary = summarize_scores(users)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "main.py", line 20, in summarize_scores
+    return {u.name: u.top_score() for u in users}
+                    ^^^^^^^^^^^^^
+  File "main.py", line 13, in top_score
+    return maximum(self.scores) if self.scores else 0
+           ^^^^^^^
+NameError: name 'maximum' is not defined

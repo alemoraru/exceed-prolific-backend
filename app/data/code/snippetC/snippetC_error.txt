@@ -1,9 +1,7 @@
 Traceback (most recent call last):
-  File "main.py", line 16, in <module>
-    main()
-  File "main.py", line 13, in main
-    tracker.print_last_score()
-  File "main.py", line 8, in print_last_score
-    print("Last score:", self.scores[len(self.scores)])
-                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-IndexError: list index out of range
+  File "main.py", line 17, in <module>
+    class ScoreReport:
+  File "main.py", line 21, in ScoreReport
+    @classmethod @staticmethod
+     ~~~~~~~~~~~~^~~~~~~~~~~~~
+TypeError: unsupported operand type(s) for @: 'type' and 'type'
