@@ -142,7 +142,9 @@ def _load_original_code_and_error(code_dir, snippet_file) -> Tuple[str, str]:
     return orig_code, orig_error
 
 
-def _parse_unittest_output(output: str, stderr: str = None) -> Tuple[Optional[int], Optional[int]]:
+def _parse_unittest_output(
+    output: str, stderr: str = None
+) -> Tuple[Optional[int], Optional[int]]:
     """
     Parse unittest output (stdout and optionally stderr) to extract number of passed and total tests.
     :param output: The output string from unittest stdout.

@@ -28,7 +28,7 @@ jobs:
 
       - name: Check black
         run: |
-          black --check .
+          black --check . --extend-exclude 'app/data/code'
 
       - name: Check isort
         run: |

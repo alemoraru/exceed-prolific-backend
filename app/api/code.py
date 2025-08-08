@@ -95,11 +95,7 @@ async def submit_code_fix(submission: CodeSubmission, db: Session = Depends(get_
     db.add(sub)
     db.commit()
 
-    return {
-        "participant_id": pid,
-        "snippet_id": snippet_id,
-        "status": code_status
-    }
+    return {"participant_id": pid, "snippet_id": snippet_id, "status": code_status}
 
 
 @router.get("/snippet")
