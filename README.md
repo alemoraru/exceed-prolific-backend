@@ -65,11 +65,11 @@ message feedback, and event logging.
 |------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|----------|
 | `DATABASE_URL`   | PostgreSQL connection string                                             | `postgresql://admin:admin@localhost:5432/prolific`                                                      | yes      |
 | `OLLAMA_URL`     | URL for the Ollama LLM service                                           | http://localhost:11434                                                                                  | yes      |
-| `OLLAMA_MODEL`   | Ollama model to use for error rephrasing                                 | `qwen2.5:7b` (default value)                                                                            | yes      |
+| `OLLAMA_MODEL`   | Ollama model to use for error rephrasing                                 | `llama3.1:8b` (default value)                                                                           | yes      |
 | `FRONTEND_URL`   | Allowed frontend origin for CORS                                         | http://localhost:3000                                                                                   | no       |
 | `OPENAI_API_KEY` | API key for OpenAI (used for LLM error rephrasing if ChatGPT is enabled) | your_openai_api_key_here -> note that we do not use the ChatGPT Client unless modifying the actual code | no       |      
 
-> **Note**: The `OLLAMA_MODEL` variable is set to `qwen2.5:7b` by default, which is the model that we have used
+> **Note**: The `OLLAMA_MODEL` variable is set to `llama3.1:8b` by default, which is the model that we have used
 > for rephrasing error messages. If you want to use a different model, make sure to set the `OLLAMA_MODEL`
 > environment variable to the desired model name. However, this will work only if you actually have the model
 > downloaded on your machine using Ollama. The full list of available models set for the backend can be found within
@@ -80,10 +80,10 @@ message feedback, and event logging.
 While our application allows technically for any Ollama model to be used, we recommend using one of the following
 models:
 
+- [`llama3.1:8b`](https://ollama.com/library/llama3.1:8b)
 - [`qwen2.5:7b`](https://ollama.com/library/qwen2.5:7b)
 - [`qwen2.5-coder:7b`](https://ollama.com/library/qwen2.5-coder:7b)
 - [`granite3.3:8b`](https://ollama.com/library/granite3.3:8b)
-- [`llama3.1:8b`](https://ollama.com/library/llama3.1:8b)
 
 ---
 
