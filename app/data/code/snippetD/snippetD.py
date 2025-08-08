@@ -8,6 +8,8 @@ def dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 def cosine(a, b):
+    if len(a) != len(b):
+        raise ValueError("Vectors must be of the same length")
     return dot(normalize(a), normalize(b))
 
 def fixed_vectors():
