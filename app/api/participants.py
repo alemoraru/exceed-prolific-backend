@@ -394,24 +394,32 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     participant.skill_level = skill_level
     participant.correct_mcq_count = correct_count
 
-    # Get all participants with this skill level
-    skill_participants = get_skill_participants(db, skill_level)
-
-    # Balanced assignment for intervention type
-    intervention_types = [
-        InterventionType.CONTINGENT.value,
-        InterventionType.PRAGMATIC.value,
-        InterventionType.STANDARD.value,
-    ]
-    assigned_types = [p.intervention_type for p in skill_participants]
-    participant.intervention_type = get_balanced_assignment(
-        intervention_types, assigned_types
-    )
-
-    # Balanced assignment for code snippet
-    code_snippets = ["A", "B", "C", "D"]
-    assigned_snippets = [p.snippet_id for p in skill_participants]
-    participant.snippet_id = get_balanced_assignment(code_snippets, assigned_snippets)
+    if skill_level == SkillLevel.EXPERT.value:
+        participant.snippet_id = "A"
+        participant.intervention_type = InterventionType.CONTINGENT.value
+    else:
+        # Novice assignment: distribute among 5 allowed combinations
+        allowed_combinations = [
+            ("A", InterventionType.PRAGMATIC.value),
+            ("B", InterventionType.CONTINGENT.value),
+            ("C", InterventionType.PRAGMATIC.value),
+            ("C", InterventionType.STANDARD.value),
+            ("A", InterventionType.STANDARD.value),
+        ]
+        # Get all novices
+        skill_participants = get_skill_participants(db, SkillLevel.NOVICE.value)
+        assigned_combos = [
+            (p.snippet_id, p.intervention_type) for p in skill_participants
+        ]
+        # Count each combo
+        counts = {combo: 0 for combo in allowed_combinations}
+        for combo in assigned_combos:
+            if combo in counts:
+                counts[combo] += 1
+        min_count = min(counts.values())
+        least_used = [combo for combo, cnt in counts.items() if cnt == min_count]
+        chosen_combo = random.choice(least_used)
+        participant.snippet_id, participant.intervention_type = chosen_combo
 
     db.commit()
     db.refresh(participant)
