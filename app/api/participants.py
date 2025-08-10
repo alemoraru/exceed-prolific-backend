@@ -394,47 +394,38 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     participant.skill_level = skill_level
     participant.correct_mcq_count = correct_count
 
-    if skill_level == SkillLevel.EXPERT.value:
-        # Expert: assign either (B, pragmatic), (C, pragmatic), (C, contingent), or (D, pragmatic), balanced
-        allowed_combinations = [
-            ("B", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.CONTINGENT.value),
-            ("D", InterventionType.PRAGMATIC.value),
-        ]
-        skill_participants = get_skill_participants(db, SkillLevel.EXPERT.value)
-        assigned_combos = [
-            (p.snippet_id, p.intervention_type) for p in skill_participants
-        ]
-        counts = {combo: 0 for combo in allowed_combinations}
-        for combo in assigned_combos:
-            if combo in counts:
-                counts[combo] += 1
-        min_count = min(counts.values())
-        least_used = [combo for combo, cnt in counts.items() if cnt == min_count]
-        chosen_combo = random.choice(least_used)
-        participant.snippet_id, participant.intervention_type = chosen_combo
-    else:
-        # Novice: assign either (A, pragmatic), (C, pragmatic), or (D, pragmatic), balanced
-        allowed_combinations = [
-            ("A", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.PRAGMATIC.value),
-            ("D", InterventionType.PRAGMATIC.value),
-        ]
-        # Get all novices
-        skill_participants = get_skill_participants(db, SkillLevel.NOVICE.value)
-        assigned_combos = [
-            (p.snippet_id, p.intervention_type) for p in skill_participants
-        ]
-        # Count each combo
-        counts = {combo: 0 for combo in allowed_combinations}
-        for combo in assigned_combos:
-            if combo in counts:
-                counts[combo] += 1
-        min_count = min(counts.values())
-        least_used = [combo for combo, cnt in counts.items() if cnt == min_count]
-        chosen_combo = random.choice(least_used)
-        participant.snippet_id, participant.intervention_type = chosen_combo
+    # Get all participants that were assigned the same skill level
+    skill_participants = get_skill_participants(db, skill_level)
+
+    # All available code snippets for assignment
+    code_snippets = ["A", "B", "C", "D"]
+
+    # Check all the assigned snippets of participants with the same skill level
+    assigned_snippets = [p.snippet_id for p in skill_participants]
+
+    # Balanced assignment for code snippet within the same skill level group
+    participant.snippet_id = get_balanced_assignment(code_snippets, assigned_snippets)
+
+    # Get all participants that were assigned the same snippet and have the same skill level
+    snippet_participants = [
+        p for p in skill_participants if p.snippet_id == participant.snippet_id
+    ]
+
+    # All available intervention types
+    intervention_types = [
+        InterventionType.CONTINGENT.value,
+        InterventionType.PRAGMATIC.value,
+        InterventionType.STANDARD.value,
+    ]
+
+    # Check all the assigned intervention types of participants with the same snippet and skill level
+    assigned_types = [p.intervention_type for p in snippet_participants]
+
+    # Assign intervention type based on the least assigned type
+    # of participants with the same snippet and skill level
+    participant.intervention_type = get_balanced_assignment(
+        intervention_types, assigned_types
+    )
 
     db.commit()
     db.refresh(participant)
