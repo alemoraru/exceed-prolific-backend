@@ -377,7 +377,8 @@ def get_balanced_assignment(options: List[str], assigned_list: List[str]) -> str
 def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     """
     Assigns skill level, intervention type, and code snippet to a participant after MCQ answers and experience.
-    Balances assignment by picking the least-assigned type/snippet, breaking ties randomly.
+    Balances the assignment of code snippets and intervention types among participants with the same skill level.
+    It is also taking into account the global assignment of intervention types to ensure a balanced distribution.
     Updates the participant object and commits to the database.
     :param participant: Participant model instance.
     :param db: Database session.
@@ -394,47 +395,54 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     participant.skill_level = skill_level
     participant.correct_mcq_count = correct_count
 
-    if skill_level == SkillLevel.EXPERT.value:
-        # Expert: assign either (B, pragmatic), (C, pragmatic), (C, contingent), or (D, pragmatic), balanced
-        allowed_combinations = [
-            ("B", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.CONTINGENT.value),
-            ("D", InterventionType.PRAGMATIC.value),
-        ]
-        skill_participants = get_skill_participants(db, SkillLevel.EXPERT.value)
-        assigned_combos = [
-            (p.snippet_id, p.intervention_type) for p in skill_participants
-        ]
-        counts = {combo: 0 for combo in allowed_combinations}
-        for combo in assigned_combos:
-            if combo in counts:
-                counts[combo] += 1
-        min_count = min(counts.values())
-        least_used = [combo for combo, cnt in counts.items() if cnt == min_count]
-        chosen_combo = random.choice(least_used)
-        participant.snippet_id, participant.intervention_type = chosen_combo
-    else:
-        # Novice: assign either (A, pragmatic), (C, pragmatic), or (D, pragmatic), balanced
-        allowed_combinations = [
-            ("A", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.PRAGMATIC.value),
-            ("D", InterventionType.PRAGMATIC.value),
-        ]
-        # Get all novices
-        skill_participants = get_skill_participants(db, SkillLevel.NOVICE.value)
-        assigned_combos = [
-            (p.snippet_id, p.intervention_type) for p in skill_participants
-        ]
-        # Count each combo
-        counts = {combo: 0 for combo in allowed_combinations}
-        for combo in assigned_combos:
-            if combo in counts:
-                counts[combo] += 1
-        min_count = min(counts.values())
-        least_used = [combo for combo, cnt in counts.items() if cnt == min_count]
-        chosen_combo = random.choice(least_used)
-        participant.snippet_id, participant.intervention_type = chosen_combo
+    # Get all participants that were assigned the same skill level
+    skill_participants = get_skill_participants(db, skill_level)
+
+    # All available code snippets for assignment
+    code_snippets = ["A", "B", "C", "D"]
+
+    # Check all the assigned snippets of participants with the same skill level
+    assigned_snippets = [p.snippet_id for p in skill_participants]
+
+    # Balanced assignment for code snippet within the same skill level group
+    participant.snippet_id = get_balanced_assignment(code_snippets, assigned_snippets)
+
+    # Get all participants that were assigned the same snippet and have the same skill level
+    snippet_participants = [
+        p for p in skill_participants if p.snippet_id == participant.snippet_id
+    ]
+
+    # All available intervention types
+    intervention_types = [
+        InterventionType.CONTINGENT.value,
+        InterventionType.PRAGMATIC.value,
+        InterventionType.STANDARD.value,
+    ]
+
+    # Check all the assigned intervention types of participants with the same snippet and skill level
+    local_assigned_types = [p.intervention_type for p in snippet_participants]
+
+    # Get global counts for each intervention type
+    global_participants = db.query(models.Participant).all()
+    global_assigned_types = [
+        p.intervention_type
+        for p in global_participants
+        if p.intervention_type is not None
+    ]
+    global_counts = {t: global_assigned_types.count(t) for t in intervention_types}
+
+    # Find locally balanced intervention types
+    local_counts = {t: local_assigned_types.count(t) for t in intervention_types}
+    min_local = min(local_counts.values())
+    locally_balanced = [t for t, c in local_counts.items() if c == min_local]
+
+    # Of the locally balanced, pick the one least assigned globally
+    filtered_global_counts = {t: global_counts[t] for t in locally_balanced}
+    min_global = min(filtered_global_counts.values())
+    globally_balanced = [
+        t for t, c in filtered_global_counts.items() if c == min_global
+    ]
+    participant.intervention_type = random.choice(globally_balanced)
 
     db.commit()
     db.refresh(participant)
