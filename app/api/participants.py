@@ -395,10 +395,12 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     participant.correct_mcq_count = correct_count
 
     if skill_level == SkillLevel.EXPERT.value:
-        # Expert: assign either (D, pragmatic) or (C, pragmatic), balanced
+        # Expert: assign either (B, pragmatic), (C, pragmatic), (C, contingent), or (D, pragmatic), balanced
         allowed_combinations = [
+            ("B", InterventionType.PRAGMATIC.value),
+            ("C", InterventionType.PRAGMATIC.value),
+            ("C", InterventionType.CONTINGENT.value),
             ("D", InterventionType.PRAGMATIC.value),
-            ("C", InterventionType.PRAGMATIC.value)
         ]
         skill_participants = get_skill_participants(db, SkillLevel.EXPERT.value)
         assigned_combos = [
@@ -413,10 +415,11 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
         chosen_combo = random.choice(least_used)
         participant.snippet_id, participant.intervention_type = chosen_combo
     else:
-        # Novice: assign either (C, pragmatic), or (D, pragmatic), balanced
+        # Novice: assign either (A, pragmatic), (C, pragmatic), or (D, pragmatic), balanced
         allowed_combinations = [
+            ("A", InterventionType.PRAGMATIC.value),
             ("C", InterventionType.PRAGMATIC.value),
-            ("D", InterventionType.PRAGMATIC.value)
+            ("D", InterventionType.PRAGMATIC.value),
         ]
         # Get all novices
         skill_participants = get_skill_participants(db, SkillLevel.NOVICE.value)
