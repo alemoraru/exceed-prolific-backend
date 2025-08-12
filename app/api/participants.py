@@ -377,7 +377,8 @@ def get_balanced_assignment(options: List[str], assigned_list: List[str]) -> str
 def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     """
     Assigns skill level, intervention type, and code snippet to a participant after MCQ answers and experience.
-    Balances assignment by picking the least-assigned type/snippet, breaking ties randomly.
+    Balances the assignment of code snippets and intervention types among participants with the same skill level.
+    It is also taking into account the global assignment of intervention types to ensure a balanced distribution.
     Updates the participant object and commits to the database.
     :param participant: Participant model instance.
     :param db: Database session.
@@ -419,13 +420,29 @@ def assign_skill_and_intervention_and_snippet(participant, db: Session) -> None:
     ]
 
     # Check all the assigned intervention types of participants with the same snippet and skill level
-    assigned_types = [p.intervention_type for p in snippet_participants]
+    local_assigned_types = [p.intervention_type for p in snippet_participants]
 
-    # Assign intervention type based on the least assigned type
-    # of participants with the same snippet and skill level
-    participant.intervention_type = get_balanced_assignment(
-        intervention_types, assigned_types
-    )
+    # Get global counts for each intervention type
+    global_participants = db.query(models.Participant).all()
+    global_assigned_types = [
+        p.intervention_type
+        for p in global_participants
+        if p.intervention_type is not None
+    ]
+    global_counts = {t: global_assigned_types.count(t) for t in intervention_types}
+
+    # Find locally balanced intervention types
+    local_counts = {t: local_assigned_types.count(t) for t in intervention_types}
+    min_local = min(local_counts.values())
+    locally_balanced = [t for t, c in local_counts.items() if c == min_local]
+
+    # Of the locally balanced, pick the one least assigned globally
+    filtered_global_counts = {t: global_counts[t] for t in locally_balanced}
+    min_global = min(filtered_global_counts.values())
+    globally_balanced = [
+        t for t, c in filtered_global_counts.items() if c == min_global
+    ]
+    participant.intervention_type = random.choice(globally_balanced)
 
     db.commit()
     db.refresh(participant)
